@@ -4,6 +4,7 @@
 \usepackage{parskip}
 \usepackage{titlesec}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{pgfgantt}
 \usepackage{tikz}
@@ -29,7 +30,7 @@
     {\LARGE \textbf{Game Design Document}}\\[1em]
     {\Huge \textbf{Umbra}}\\[0.5em]
     {\large A Light and Shadow Puzzle Game}\\[3cm]
-    {\normalsize Group Members: [Name 1], [Name 2], [Name 3]}\\[1em]
+    {\normalsize Group Members: Cecilia Chen, Jacky Park, Yiding Tian}\\[1em]
     {\normalsize Instructor: Dr.\ Stephen Lane}\\[1em]
     {\normalsize Spring 2026}
     \vfill
@@ -131,9 +132,7 @@ approximately five weeks of part-time development.
                       mount point by clicking and dragging. Emit a directed cone of
                       light; rotating the spotlight continuously reshapes the shadow
                       it casts behind any blocking object in its beam.
-                \item \textbf{Blocking objects} (crates, pillars). Slid to any of their
-                      trajectory's designated stop positions by clicking and dragging
-                      along their fixed path. Reposition them to add, remove, or redirect
+                \item \textbf{Blocking objects} (crates, pillars). Player moves to pressure plates to toggle position changes of the object to other set positions. Reposition them to add, remove, or redirect
                       a shadow cast by a nearby light source.
             \end{itemize}
 
@@ -251,7 +250,7 @@ approximately five weeks of part-time development.
 
         \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
             \item \textbf{Keyboard (WASD / arrow keys).} Moves the Orb through the
-                  scene. The Orb can only traverse shadow-covered regions; entering a
+                  scene. The Orb is able to traverse shadow-covered regions; entering a
                   lit gap causes it to fall and respawn at the level start position
                   with all objects remaining where the player left them.
             \item \textbf{Mouse.} Used exclusively to manipulate light sources and
@@ -399,17 +398,71 @@ approximately five weeks of part-time development.
     \subsection{Design Assumptions}
 
         \subsubsection{Hardware}
-        % TODO: List minimum and recommended hardware requirements (CPU, RAM, GPU).
+        Umbra targets standard gaming PC hardware. The primary performance constraint
+        is real-time dynamic shadow rendering via Unreal Engine~5's Lumen system.
+
+        \begin{center}
+        \begin{tabularx}{\linewidth}{lXX}
+            \toprule
+            & \textbf{Minimum} & \textbf{Recommended} \\
+            \midrule
+            OS      & Windows 10 (64-bit)            & Windows 11 (64-bit) \\
+            CPU     & Intel Core i5-8400 / AMD Ryzen 5 2600
+                    & Intel Core i7-12700 / AMD Ryzen 7 5800X \\
+            RAM     & 8 GB                           & 16 GB \\
+            GPU     & NVIDIA GTX 1070 / AMD RX 5700  & NVIDIA RTX 3070 / AMD RX 6800 XT \\
+            Storage & 4 GB available                 & 8 GB available (SSD) \\
+            \bottomrule
+        \end{tabularx}
+        \end{center}
 
         \subsubsection{Software}
-        % TODO: List software dependencies: Unreal Engine 5 version, OS (Windows),
-        %       development tools, version control, etc.
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Game engine.} Unreal Engine~5 (UE5.3 or later), using
+                  C++ and Blurprit as wrappers for gameplay logic and Lumen for real-time global
+                  illumination and dynamic shadow rendering.
+            \item \textbf{Operating system.} Windows 10/11 (64-bit). Development
+                  and testing are performed exclusively on Windows.
+            \item \textbf{Development IDE.} Visual Studio 2022 (Community or
+                  Professional) for any C++ extensions; UE5 editor for Blueprint
+                  scripting and level design.
+            \item \textbf{Version control.} Git with GitHub for source management;
+                  Unreal's \texttt{.gitignore} template applied to exclude derived
+                  build artefacts.
+            \item \textbf{Asset pipeline.} Blender for 3D modelling and UV unwrapping;
+                  Adobe Photoshop / GIMP for texture authoring; Audacity for audio
+                  editing.
+        \end{itemize}
 
         \subsubsection{Algorithms and Techniques}
-        % TODO: Describe key technical approaches: Unreal Engine 5 real-time dynamic
-        %       shadow system, continuous shadow geometry as physical collision, mouse
-        %       drag interaction with boundary constraints for light sources, fixed
-        %       trajectory/snap logic for blocking objects.
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Real-time dynamic shadows (Lumen).} Unreal Engine~5's Lumen
+                  global illumination system computes shadow volumes continuously as
+                  light source positions and blocking object positions change. No
+                  baked lighting is used; all shadows are fully dynamic.
+            \item \textbf{Shadow geometry as physical collision.} Shadow-covered
+                  regions are mapped to runtime collision volumes. When a light source
+                  or blocking object moves, affected collision volumes are updated
+                  every frame so the Orb's traversable surface always matches the
+                  visible shadow pattern.
+            \item \textbf{Lantern drag (boundary-constrained free movement).} A mouse
+                  drag event translates the lantern's world position along the
+                  camera's view plane. A bounding volume defined per lantern at
+                  level-design time clamps the position, preventing the lantern from
+                  leaving its valid region.
+            \item \textbf{Spotlight rotation (pivot-constrained rotation).} A mouse
+                  drag event computes the angle between the spotlight's mount point
+                  and the cursor's world-space projection, clamped to a
+                  designer-specified angular range.
+            \item \textbf{Blocking object trajectory and snap.} Each blocking object
+                  follows a pre-defined spline or linear path. When the player
+                  interacts with a blocking object, it moves to the nearest valid
+                  stop position along its trajectory and snaps into place.
+            \item \textbf{Orb physics.} The Orb uses UE5's built-in sphere physics
+                  with gravity and rolling friction. Movement is driven by keyboard
+                  input applying forces to the physics body; the Orb falls under
+                  gravity when it rolls off a shadow edge into lit void.
+        \end{itemize}
 
     \subsection{Storyboards}
     % TODO: Insert concept sketches or storyboard panels showing key game states
@@ -418,12 +471,154 @@ approximately five weeks of part-time development.
     \subsection{Design Logic}
 
         \subsubsection{Finite State Machines --- Events / States / Effects}
-        % TODO: Provide FSM diagrams or tables for the game's core states:
-        %       Idle, Light Source Dragging, Blocking Object Sliding, Level Complete, etc.
+
+        The game's interaction layer is modelled as a finite state machine with
+        seven states. \textbf{Idle} is the default resting state; all others are
+        transient and return to Idle (or advance to Level Complete) on their
+        terminal event. A \textbf{Reset} event is available in Idle, Orb Moving,
+        Lantern Drag, and Spotlight Rotate states; it returns all objects and the
+        Orb to their level-start positions and always transitions to Idle.
+
+        \begin{center}
+        \begin{tikzpicture}[
+            node distance=1.5cm and 2.6cm,
+            state/.style={draw, rounded corners=3pt, minimum width=2.0cm,
+                          minimum height=0.85cm, text centered,
+                          fill=blue!8, font=\small, align=center},
+            arr/.style={-{Stealth[length=5pt]}, thick},
+            lbl/.style={font=\scriptsize, align=center, inner sep=1.5pt}]
+
+            %% ── Nodes ─────────────────────────────────────────────────────
+            \node[state]                          (idle)     {Idle};
+            \node[state, left=2.8cm  of idle]     (lantern)  {Lantern\\Drag};
+            \node[state, right=2.8cm of idle]     (spot)     {Spotlight\\Rotate};
+            \node[state, below=2.2cm of idle]     (orbmove)  {Orb Moving};
+            \node[state, below left=1.8cm and 2.0cm of orbmove]
+                                                  (blocker)  {Blocker\\Sliding};
+            \node[state, below=1.8cm of orbmove]  (falling)  {Orb Falling};
+            \node[state, right=2.8cm of orbmove]  (complete) {Level\\Complete};
+
+            %% ── Transitions ───────────────────────────────────────────────
+            \draw[arr, bend left=15] (idle)    to
+                node[lbl, above]{click lantern}  (lantern);
+            \draw[arr, bend left=15] (lantern) to
+                node[lbl, below]{release}        (idle);
+
+            \draw[arr, bend left=15] (idle) to
+                node[lbl, above]{click spotlight} (spot);
+            \draw[arr, bend left=15] (spot) to
+                node[lbl, below]{release}         (idle);
+
+            \draw[arr, bend right=20] (idle)    to
+                node[lbl, right]{WASD}    (orbmove);
+            \draw[arr, bend right=20] (orbmove) to
+                node[lbl, left] {release} (idle);
+
+            \draw[arr, bend left=15] (orbmove) to
+                node[lbl, above left]{pressure\\plate} (blocker);
+            \draw[arr, bend left=15] (blocker) to
+                node[lbl, below right]{stop\\reached}  (orbmove);
+
+            \draw[arr] (orbmove) to
+                node[lbl, right]{lit gap}    (falling);
+            \draw[arr, bend right=55] (falling) to
+                node[lbl, right, pos=0.4]{respawn} (idle);
+
+            \draw[arr] (orbmove) to
+                node[lbl, above]{exit gate} (complete);
+
+        \end{tikzpicture}
+        \end{center}
+
+        \medskip\noindent\textbf{State descriptions:}
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Idle.} Default state. No input is being processed.
+                  The player may hover over interactable objects, press WASD,
+                  click a light source, or press Reset.
+            \item \textbf{Lantern Drag.} Left mouse button is held on a
+                  portable lantern. The lantern follows the cursor world-space
+                  projection each frame, clamped to its movement boundary.
+                  Shadow geometry updates continuously. Released mouse button
+                  returns to Idle.
+            \item \textbf{Spotlight Rotate.} Left mouse button is held on a
+                  wall-mounted spotlight. The spotlight angle is driven by the
+                  cursor's angular offset from the mount point each frame,
+                  clamped to the designer-specified range. Shadow geometry
+                  updates continuously. Released mouse button returns to Idle.
+            \item \textbf{Orb Moving.} WASD is held; input forces are applied
+                  to the Orb's physics body each frame. Stepping on a pressure
+                  plate transitions to Blocker Sliding (then back). Entering
+                  a lit gap transitions to Orb Falling. Reaching the exit gate
+                  transitions to Level Complete.
+            \item \textbf{Blocker Sliding.} A blocking object is animating
+                  along its trajectory toward the next stop position. Player
+                  input is suspended. When the object snaps to the stop, the
+                  machine returns to Orb Moving.
+            \item \textbf{Orb Falling.} The Orb has entered lit void. A brief
+                  fall animation and audio cue play. All objects remain where
+                  the player left them. On animation end the Orb respawns at
+                  the level start and the machine returns to Idle.
+            \item \textbf{Level Complete.} The Orb has entered the exit gate.
+                  A completion animation and audio cue play, then the next
+                  level loads (or the Victory screen if all levels are done).
+        \end{itemize}
 
         \subsubsection{User Solution / Actions}
-        % TODO: Walk through an example puzzle solution step-by-step, mapping
-        %       player actions to state changes.
+
+        The following walkthrough traces a complete solution to the tutorial
+        level (\textbf{The Antechamber}) and maps each player action to the
+        corresponding FSM transitions.
+
+        \begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+
+            \item \textbf{Level loads --- Idle.}
+                  The Orb sits at the start position. A portable lantern rests
+                  near the centre of the platform, casting light away from a
+                  gap that blocks the path to the exit. A blocking pillar
+                  stands to the side of the gap, and a pressure plate is
+                  visible beyond the first gap.
+
+            \item \textbf{Drag the lantern to bridge the first gap
+                  (Idle $\to$ Lantern Drag $\to$ Idle).}
+                  The player clicks and holds the lantern, then drags it
+                  toward the near edge of the gap. As the lantern moves, its
+                  shadow sweeps across the void, and the gap region gradually
+                  becomes physically solid. When the shadow fully spans the
+                  gap the player releases the mouse. The machine returns to
+                  Idle with the gap bridged by shadow.
+
+            \item \textbf{Roll the Orb across the shadow bridge
+                  (Idle $\to$ Orb Moving $\to$ Idle).}
+                  The player presses WASD to roll the Orb forward along the
+                  shadow-covered path. The Orb crosses the gap without falling
+                  because the shadow beneath it is solid. The player releases
+                  WASD after reaching the far platform; the machine returns to
+                  Idle.
+
+            \item \textbf{Trigger the pressure plate to slide the pillar
+                  (Idle $\to$ Orb Moving $\to$ Blocker Sliding $\to$
+                  Orb Moving $\to$ Idle).}
+                  A second gap separates the far platform from the exit. The
+                  blocking pillar, if repositioned, would cast a shadow that
+                  spans it. The player presses WASD to roll the Orb onto the
+                  pressure plate marked on the floor. The Orb Moving state
+                  detects the pressure-plate overlap and transitions to Blocker
+                  Sliding: the pillar animates along its fixed trajectory to
+                  its second stop position, now blocking the light source from
+                  the correct angle. The shadow extends across the second gap.
+                  Once the pillar snaps to the stop the machine returns to Orb
+                  Moving. The player releases WASD; the machine returns to
+                  Idle.
+
+            \item \textbf{Roll the Orb to the exit gate
+                  (Idle $\to$ Orb Moving $\to$ Level Complete).}
+                  The player presses WASD to roll the Orb along the newly
+                  formed shadow path across the second gap and into the exit
+                  gate. The Orb Moving state detects the exit-gate overlap and
+                  transitions to Level Complete. The completion animation plays
+                  and the next level loads.
+
+        \end{enumerate}
 
     \subsection{Software Versions}
 
