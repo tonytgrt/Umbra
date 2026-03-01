@@ -6,6 +6,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{pgfgantt}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
 \usepackage[hidelinks]{hyperref}
 
 % Section formatting
@@ -244,23 +246,106 @@ approximately five weeks of part-time development.
     \subsection{Interaction Models}
 
         \subsubsection{User Interface --- Navigation and Movement}
-        % TODO: Describe controls (mouse/keyboard, gamepad), camera perspective,
-        %       and how the player moves through the world.
+        The game uses a fixed top-down camera with no scrolling; the entire level is
+        visible at once. The player uses two input modes simultaneously:
+
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Keyboard (WASD / arrow keys).} Moves the Orb through the
+                  scene. The Orb can only traverse shadow-covered regions; entering a
+                  lit gap causes it to fall and respawn at the level start position
+                  with all objects remaining where the player left them.
+            \item \textbf{Mouse.} Used exclusively to manipulate light sources and
+                  blocking objects. Hovering over an interactable object highlights it;
+                  clicking and dragging repositions lanterns (within their boundary),
+                  rotates spotlights (about their fixed mount), or slides blocking
+                  objects to the next stop along their trajectory.
+        \end{itemize}
+
+        The HUD is minimal: the level name is displayed in a corner and a single
+        \textbf{Reset} button returns all objects to their starting configuration and
+        the Orb to the level start. There is no timer, health bar, or inventory.
 
         \subsubsection{Game Play Sequence and Levels}
-        % TODO: Describe the flow from level start to completion, including light source
-        %       and blocking object interaction, and win/lose conditions.
+        Each session begins at the Main Menu, where the player selects a level. Within
+        a level the player alternates between configuring light sources and blocking
+        objects and moving the Orb. When the Orb reaches the exit gate the level is
+        marked complete and the next level loads. Completing all three puzzle levels
+        triggers the Victory screen. The player may reset the current level's object
+        configuration at any time without penalty.
+
+        \begin{center}
+        \begin{tikzpicture}[
+            node distance=1.0cm and 2.2cm,
+            box/.style={draw, rounded corners, minimum width=2.4cm, minimum height=0.75cm,
+                        text centered, fill=blue!10, font=\small},
+            arr/.style={-{Stealth}, thick},
+            lbl/.style={font=\scriptsize, midway}]
+
+            \node[box] (menu)    {Main Menu};
+            \node[box, right=of menu]    (puzzle)   {Puzzle Solving};
+            \node[box, right=of puzzle]  (complete) {Level Complete};
+            \node[box, right=of complete](victory)  {Victory!};
+
+            \draw[arr] (menu)    -- node[lbl, above]{Start / select level} (puzzle);
+            \draw[arr] (puzzle)  -- node[lbl, above]{Orb reaches exit}     (complete);
+            \draw[arr] (complete)-- node[lbl, above]{All levels done}       (victory);
+
+            % next-level loop back under the nodes
+            \draw[arr] (complete.south) -- ++(0,-0.9)
+                       -| node[lbl, below, pos=0.25]{Load next level} (puzzle.south);
+
+            % reset self-loop above puzzle node
+            \draw[arr] (puzzle.north) -- ++(0,0.85) -- ++(-2.5,0)
+                       node[lbl, above, pos=0.5]{Reset puzzle}
+                       -- ++(0,-0.85) -- (puzzle.north);
+        \end{tikzpicture}
+        \end{center}
 
         \subsubsection{User/Environment --- Obstacles and Props}
-        % TODO: Describe interactable objects (lanterns, spotlights, crates,
-        %       pillars) and environmental hazards.
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Gaps / void.} Any region not covered by a shadow pattern is
+                  open void. The Orb falls if it enters a lit gap and respawns at the
+                  level start; no objects are moved by the respawn.
+            \item \textbf{Static ruins geometry.} Walls, archways, and raised platforms
+                  are permanently solid and block both the Orb and shadow propagation.
+                  They cannot be moved.
+            \item \textbf{Portable lanterns.} Interactable light sources; dragged freely
+                  within their boundary. Cast omni-directional shadow behind any object
+                  they illuminate.
+            \item \textbf{Wall-mounted spotlights.} Interactable light sources; rotated
+                  about their fixed mount point. Cast a directed cone of shadow behind
+                  objects in their beam.
+            \item \textbf{Blocking objects} (pillars, crates). Interactable obstacles;
+                  slide along fixed trajectories to reshape the shadows cast by nearby
+                  light sources.
+            \item \textbf{Exit gate.} A static trigger zone. Completing the level
+                  requires the Orb to enter this region while a valid shadow path
+                  connects start to exit.
+        \end{itemize}
 
         \subsubsection{User/Character}
-        % TODO: Describe how the player interacts with the player character
-        %       (dragging light sources, sliding blocking objects, etc.).
+        The player never directly controls the Orb's interaction with objects; all
+        object manipulation is performed via mouse before or between Orb movements.
+        The interaction model is:
+
+        \begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+            \item Player uses the mouse to position light sources and blocking objects,
+                  observing how the live shadow pattern changes.
+            \item Player uses the keyboard to roll the Orb along the shadow path toward
+                  the exit.
+            \item If the Orb falls (entered lit void), it respawns at the level start;
+                  the player adjusts the configuration and tries again.
+            \item When the Orb reaches the exit gate, the level ends and the next
+                  level loads automatically.
+        \end{enumerate}
+
+        The Reset button is always accessible and returns all objects and the Orb to
+        their initial positions for that level.
 
         \subsubsection{Character/Character}
-        % TODO: Describe any character-to-character interactions (if applicable).
+        There are no NPCs, enemies, or secondary characters. The Orb is the only
+        dynamic entity in the scene; all interaction is between the player, the Orb,
+        and the environment.
 
     \subsection{Performance and Scoring}
 
