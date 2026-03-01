@@ -1,0 +1,19 @@
+Task Name,Week 1 (2-Mar),Week 2 (9-Mar),Week 3 (16-Mar),Week 4 (23-Mar),Week 5 (30-Mar)
+Dates,2-Mar,9-Mar,16-Mar,23-Mar,30-Mar
+Design Doc,All,,,,
+Project Setup & Scaffolding,CC & YT,JP,,,
+Shadow & Light System,CC & JP,JP,CC & JP,,
+Player Interaction,,JP,JP,,
+Orb Character,CC,,CC,,
+Level Design,,JP,All,YT,
+UI & HUD,,,YT,YT,
+Alpha Build & Integration,,,*1 All,,
+Art & Assets,,,CC & YT,YT,
+Audio,,,,YT,
+Beta Build & Integration,,,,*2 All,
+Testing & Final Demo,,,,All,*3 All
+
+*1 = Alpha Playtest (Mar 18)
+*2 = Beta Playtest (Mar 25)
+*3 = Final Demo (Mar 30) / Videos (Apr 1)
+CC = Cecilia Chen [out Mar 6-15] | JP = Jacky Park | YT = Yiding Tian [out Mar 7-14]
