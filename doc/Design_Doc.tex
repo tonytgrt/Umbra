@@ -220,7 +220,26 @@ approximately five weeks of part-time development.
         or NPCs; the Orb navigates the ruins alone.
 
         \subsubsection{Levels of Difficulty}
-        % TODO: Describe how puzzle complexity scales across levels.
+        Difficulty scales across the four levels along three axes: the number of
+        interactable objects, the number of mechanics in play simultaneously, and the
+        degree of shadow interdependence (how much moving one object disrupts the rest
+        of the configuration).
+
+        \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+            \item \textbf{Tutorial.} One lantern, one pillar, one mechanic (lantern drag).
+                  The solution is reachable through direct experimentation; no
+                  interdependence between objects.
+            \item \textbf{Level 1.} One lantern, two pillars. Both lantern positioning
+                  and pillar placement must be correct simultaneously, introducing mild
+                  interdependence.
+            \item \textbf{Level 2.} Two spotlights, two blocking objects; no lantern.
+                  Introduces spotlight rotation as a second mechanic. The branching
+                  layout means shadow direction determines which paths are accessible,
+                  requiring directional reasoning.
+            \item \textbf{Level 3.} One lantern, two spotlights, three blocking objects.
+                  All mechanics active at once; high interdependence means most single
+                  adjustments require re-evaluating the full shadow layout.
+        \end{itemize}
 
     \subsection{Interaction Models}
 
