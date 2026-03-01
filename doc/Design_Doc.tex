@@ -161,39 +161,63 @@ approximately five weeks of part-time development.
         randomness---only the satisfaction of spatial reasoning.
 
         \subsubsection{Look and Feel}
-        Umbra uses a \textbf{minimalist silhouette aesthetic}. The scene is rendered with
-        stark contrast between two dominant states: warm \textbf{amber} wash for areas in
-        direct light and cool \textbf{blue-grey} for areas in shadow. Because shadows are
-        continuous and computed in real time, the boundary between lit and shadowed
-        regions is a smooth, live edge that shifts as the player drags a light source or
-        adjusts a blocking object---making the cause-and-effect relationship between
-        manipulation and shadow shape immediately visible.
-
-        The visual language is deliberately simple so that the puzzle logic---not the
-        art---demands the player's attention. Blocking objects are bold geometric
-        silhouettes (squares, rectangles, cylinders) with no decorative surface detail.
-        Light sources glow with a soft halo to distinguish them from passive objects.
-        Draggable light sources show a subtle highlight ring while the mouse hovers over
-        them; blocking objects show directional arrows along their trajectory to indicate
-        available move directions. The player character is a minimal dark figure,
-        readable against both lit and shadowed backgrounds.
-
-        Ambient audio is calm and atmospheric, establishing the mood of a world governed
-        by light. Interaction feedback is delivered through crisp sound cues (light source
-        drag start/end, blocking object slide) and the continuously animating shadow
-        boundary, which gives the player instant visual confirmation of every manipulation.
+        Umbra uses a \textbf{minimalist silhouette aesthetic} with high contrast between
+        lit and shadowed regions. The live shadow boundary shifts continuously as the
+        player manipulates light sources or blocking objects, making cause and effect
+        immediately visible. Objects are bold geometric silhouettes with no decorative
+        detail; light sources are visually distinct from passive blockers. Ambient audio
+        is calm and atmospheric, reinforced by crisp sound cues for each interaction.
 
     \subsection{Worlds, Characters and Story}
 
         \subsubsection{Back Story}
-        % TODO: Provide any narrative framing or world-building context.
+        An ancient Roman civilization once mastered the art of sculpting light---using
+        mirrors, lenses, and sacred flames to build bridges and open sealed vaults across
+        their floating island temples. When the empire fell, the islands drifted apart
+        and the light paths collapsed. The player is an explorer who has rediscovered one
+        of these ruined sanctuaries, and must use the lanterns and spotlights left behind
+        to reconstruct the shadow geometry that once connected the fragments and reach the
+        vault at the heart of the ruins.
 
         \subsubsection{Spaces / Worlds}
-        % TODO: Describe the level environments, light/shadow regions, and how they
-        %       change as light sources and blocking objects are repositioned.
+        All levels are set on the ruins of floating Roman island temples suspended above
+        a void. Each level is a single self-contained island platform viewed from a fixed
+        top-down perspective. The game ships with four spaces: one tutorial and three
+        puzzle levels.
+
+        \begin{itemize}[leftmargin=1.5em, itemsep=4pt]
+            \item \textbf{Tutorial --- The Antechamber.} A small, open platform with one
+                  lantern and one blocking pillar. Introduces the core mechanic: the player
+                  drags the lantern to cast a shadow across a gap, walks across it, then
+                  slides the pillar to extend the shadow to the exit. No dead ends; the
+                  correct configuration is reached through minimal experimentation.
+
+            \item \textbf{Level 1 --- The Collapsed Bridge.} A medium-sized island with a
+                  wide central chasm. One lantern and two blocking pillars are available.
+                  The player must position the lantern and arrange the pillars to cast
+                  overlapping shadows that span the gap. Introduces the idea that multiple
+                  objects must be configured together.
+
+            \item \textbf{Level 2 --- The Torch Hall.} A longer, corridor-like island with
+                  two wall-mounted spotlights and two blocking objects. The spotlights must
+                  be rotated to project shadows down branching side paths; only one branch
+                  leads to the exit. Introduces spotlight rotation and the need to reason
+                  about shadow direction.
+
+            \item \textbf{Level 3 --- The Inner Sanctum.} The largest island, combining
+                  a lantern, two spotlights, and three blocking objects. The path to the
+                  exit requires using all light sources in concert; adjusting one
+                  disrupts another. Intended as the capstone challenge that exercises all
+                  mechanics introduced in earlier levels.
+        \end{itemize}
 
         \subsubsection{Characters}
-        % TODO: Describe the player character and any non-player entities.
+        The sole character is \textbf{the Orb}, a Roman ceremonial stone sphere that
+        once served as the focal lens at the heart of each island temple. When the empire
+        fell, the Orb was scattered across the ruins and lost its light-guiding purpose.
+        The player controls the Orb, rolling it through the reconstructed shadow paths to
+        return it to the vault at the level's exit. There are no other characters, enemies,
+        or NPCs; the Orb navigates the ruins alone.
 
         \subsubsection{Levels of Difficulty}
         % TODO: Describe how puzzle complexity scales across levels.
