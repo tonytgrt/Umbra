@@ -114,7 +114,7 @@ approximately five weeks of part-time development.
                       or rotate. Shadow geometry updates continuously as the player drags.
                 \item \textbf{Blocking objects} (crates, pillars) slide along fixed,
                       pre-defined trajectories and snap to designer-specified stop
-                      positions when the player clicks and drags them. They cannot be
+                      positions when the player moves to specific pressure plates. They cannot be
                       freely placed; each object has exactly the set of positions its
                       trajectory permits.
                 \item The level is solved when the player's character reaches the exit
@@ -627,10 +627,8 @@ approximately five weeks of part-time development.
         all core mechanics in a single fully playable level.
 
         \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
-            \item \textbf{Core shadow mechanic.} Real-time dynamic shadows via
-                  UE5 Lumen; shadow-covered regions are mapped to runtime
-                  collision volumes so the Orb can traverse them. Lit regions
-                  are void; the Orb falls and respawns if it enters one.
+            \item \textbf{Core shadow mechanic.} Real-time dynamic shadows; shadow-covered regions are mapped to runtime
+                  collision volumes so the Orb can traverse them.
             \item \textbf{Lantern drag.} One portable lantern freely draggable
                   within its boundary constraint; shadow updates continuously.
             \item \textbf{Blocking objects and pressure plates.} One or two
@@ -690,9 +688,7 @@ approximately five weeks of part-time development.
                   An on-screen prompt reads: \textit{``Drag the lantern to
                   cast a shadow bridge.''}  The player adjusts the lantern;
                   the shadow snaps across the gap.  A second prompt reads:
-                  \textit{``Walk across the shadow.''}  Rolling the Orb
-                  across confirms that shadows are solid and lit regions are
-                  void.
+                  \textit{``Walk across the bridge.''} 
 
             \item \textbf{Pressure-plate and blocking-object introduction.}
                   The Orb arrives at a second gap. A pressure plate is
@@ -704,7 +700,7 @@ approximately five weeks of part-time development.
                   player rolls the Orb across to complete the level.
 
             \item \textbf{Respawn demonstration (optional).}  If the player
-                  rolls the Orb into a lit gap before completing either step,
+                  rolls the Orb into a void before completing either step,
                   the fall animation plays and the Orb respawns at the level
                   start with all objects in their current positions.  No
                   explicit prompt is shown; the mechanic is self-evident.
