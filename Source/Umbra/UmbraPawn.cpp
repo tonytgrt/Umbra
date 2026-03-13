@@ -1,0 +1,65 @@
+// Umbra - Light & Shadow Puzzle Game
+
+#include "UmbraPawn.h"
+#include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
+
+AUmbraPawn::AUmbraPawn()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	// Collision root
+	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
+	CollisionSphere->InitSphereRadius(30.f);
+	CollisionSphere->SetCollisionProfileName(TEXT("Pawn"));
+	CollisionSphere->SetSimulatePhysics(true);
+	CollisionSphere->SetLinearDamping(LinearDamping);
+	CollisionSphere->SetAngularDamping(AngularDamping);
+	CollisionSphere->BodyInstance.bLockZTranslation = true;
+	SetRootComponent(CollisionSphere);
+
+	// Visible mesh
+	PawnMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawnMesh"));
+	PawnMesh->SetupAttachment(CollisionSphere);
+	PawnMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Load default sphere mesh
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	if (SphereMesh.Succeeded())
+	{
+		PawnMesh->SetStaticMesh(SphereMesh.Object);
+		PawnMesh->SetRelativeScale3D(FVector(0.6f));
+	}
+}
+
+void AUmbraPawn::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Apply damping values (in case they were tuned in editor)
+	CollisionSphere->SetLinearDamping(LinearDamping);
+	CollisionSphere->SetAngularDamping(AngularDamping);
+}
+
+void AUmbraPawn::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// Apply movement force from cached input
+	if (!CurrentMoveInput.IsNearlyZero())
+	{
+		FVector Force(CurrentMoveInput.X, CurrentMoveInput.Y, 0.f);
+		CollisionSphere->AddForce(Force * MoveForce, NAME_None, true);
+	}
+}
+
+void AUmbraPawn::SetMoveInput(FVector2D Input)
+{
+	CurrentMoveInput = Input;
+}
+
+void AUmbraPawn::PerformShadowCheck()
+{
+	// TODO: Phase 1 — raycast to each light, check if pawn is in shadow over void
+}
