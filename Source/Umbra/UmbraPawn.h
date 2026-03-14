@@ -8,6 +8,8 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class USpringArmComponent;
+class UCameraComponent;
 
 UCLASS()
 class AUmbraPawn : public APawn
@@ -31,6 +33,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> PawnMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USpringArmComponent> CameraBoom;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UCameraComponent> TopDownCamera;
 
 	/** Force applied per unit of input */
 	UPROPERTY(EditAnywhere, Category = "Movement")

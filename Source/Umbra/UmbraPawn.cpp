@@ -3,6 +3,8 @@
 #include "UmbraPawn.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUmbraPawn::AUmbraPawn()
@@ -23,6 +25,19 @@ AUmbraPawn::AUmbraPawn()
 	PawnMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawnMesh"));
 	PawnMesh->SetupAttachment(CollisionSphere);
 	PawnMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Top-down camera
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(CollisionSphere);
+	CameraBoom->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	CameraBoom->TargetArmLength = 1500.f;
+	CameraBoom->bDoCollisionTest = false;
+	CameraBoom->bInheritPitch = false;
+	CameraBoom->bInheritYaw = false;
+	CameraBoom->bInheritRoll = false;
+
+	TopDownCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
+	TopDownCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 
 	// Load default sphere mesh
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
