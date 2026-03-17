@@ -43,7 +43,7 @@ void AUmbraPillar::BeginPlay()
 		// Safety fallback: use current location as sole stop
 		WorldStopPositions.Add(Origin);
 		UE_LOG(LogUmbra, Warning,
-			TEXT("UmbraPillar '%s': No stop positions configured — using spawn location as sole stop."),
+			TEXT("UmbraPillar '%s': No stop positions configured  -  using spawn location as sole stop."),
 			*GetName());
 	}
 	else
@@ -105,7 +105,7 @@ void AUmbraPillar::MoveToStop(int32 StopIndex)
 	if (bIsSliding)
 	{
 		UE_LOG(LogUmbra, Log,
-			TEXT("UmbraPillar '%s': Already sliding — ignoring MoveToStop(%d)"),
+			TEXT("UmbraPillar '%s': Already sliding  -  ignoring MoveToStop(%d)"),
 			*GetName(), StopIndex);
 		return;
 	}
@@ -119,7 +119,7 @@ void AUmbraPillar::MoveToStop(int32 StopIndex)
 	bIsSliding = true;
 
 	UE_LOG(LogUmbra, Log,
-		TEXT("UmbraPillar '%s': Sliding from stop %d → stop %d"),
+		TEXT("UmbraPillar '%s': Sliding from stop %d  ->  stop %d"),
 		*GetName(), CurrentStopIndex, StopIndex);
 }
 

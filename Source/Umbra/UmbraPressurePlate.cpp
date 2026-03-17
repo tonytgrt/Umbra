@@ -124,7 +124,7 @@ void AUmbraPressurePlate::ActivatePlate()
 		if (!Pillar)
 		{
 			UE_LOG(LogUmbra, Warning,
-				TEXT("UmbraPressurePlate '%s': Null entry in LinkedPillars ¡ª "
+				TEXT("UmbraPressurePlate '%s': Null entry in LinkedPillars -- "
 					"did you forget to assign it?"),
 				*GetName());
 			continue;

@@ -21,7 +21,7 @@ AUmbraPawn::AUmbraPawn()
 	GetCapsuleComponent()->InitCapsuleSize(30.f, 30.f);
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("Pawn"));
 
-	// Visible mesh — attach to root capsule
+	// Visible mesh  -  attach to root capsule
 	PawnMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PawnMesh"));
 	PawnMesh->SetupAttachment(GetRootComponent());
 	PawnMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -84,7 +84,7 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		AddMovementInput(Direction);
 	}
 
-	// Rolling effect — rotate mesh based on velocity
+	// Rolling effect  -  rotate mesh based on velocity
 	const FVector Velocity = GetVelocity();
 	const float Speed = Velocity.Size();
 	if (Speed > 1.f)
@@ -99,7 +99,7 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		PawnMesh->SetWorldRotation(RollingRotation);
 	}
 
-	// Track safe ground before shadow check — only when on solid (non-bridge) ground
+	// Track safe ground before shadow check  -  only when on solid (non-bridge) ground
 	bIsOnBridge = IsStandingOnBridge();
 	if (!bIsOnBridge)
 	{
@@ -181,7 +181,7 @@ void AUmbraPawn::PerformShadowCheck()
 		}
 		else
 		{
-			// Something blocks this light — pawn is in its shadow
+			// Something blocks this light  -  pawn is in its shadow
 			bAnyBlocked = true;
 #if ENABLE_DRAW_DEBUG
 			DrawDebugLine(GetWorld(), PawnLocation, Hit.ImpactPoint,
@@ -244,7 +244,7 @@ bool AUmbraPawn::IsStandingOnBridge() const
 
 void AUmbraPawn::StartBridgeRespawn()
 {
-	UE_LOG(LogUmbra, Log, TEXT("Lost shadow while on bridge — respawning to last safe location"));
+	UE_LOG(LogUmbra, Log, TEXT("Lost shadow while on bridge  -  respawning to last safe location"));
 
 	bIsRespawning = true;
 	RespawnElapsed = 0.f;
@@ -284,7 +284,7 @@ void AUmbraPawn::TickBridgeRespawn(float DeltaSeconds)
 	}
 	else
 	{
-		// Done — restore everything
+		// Done  -  restore everything
 		PawnMesh->SetRelativeScale3D(OriginalMeshScale);
 		SetActorLocation(RespawnTargetLocation);
 
