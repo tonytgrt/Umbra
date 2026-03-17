@@ -1,6 +1,7 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraPillar.h"
+#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Umbra.h"
@@ -9,20 +10,24 @@ AUmbraPillar::AUmbraPillar()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// ©¤©¤ Root mesh ¡ª provides collision and casts shadows ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// Box collision (blocks visibility traces so it casts "shadow")
+	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
+	CollisionBox->SetBoxExtent(FVector(30.f, 30.f, 120.f));
+	CollisionBox->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	SetRootComponent(CollisionBox);
+
+	// Visual mesh
 	PillarMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PillarMesh"));
-	SetRootComponent(PillarMesh);
+	PillarMesh->SetupAttachment(CollisionBox);
+	PillarMesh->SetRelativeLocation(FVector(-20.f, 0.f, -110.f));
+	PillarMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	PillarMesh->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	PillarMesh->SetSimulatePhysics(false);
-	PillarMesh->SetCastShadow(true);  // shadow casting is critical for the puzzle
-
-	// Placeholder cube mesh ¡ª you will swap this for a real pillar model in the editor
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(
-		TEXT("/Engine/BasicShapes/Cube.Cube"));
-	if (CubeMesh.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(
+		TEXT("/Game/Pillar/Meshes/Pillar_001/SM_Pillar_001.SM_Pillar_001"));
+	if (Mesh.Succeeded())
 	{
-		PillarMesh->SetStaticMesh(CubeMesh.Object);
+		PillarMesh->SetStaticMesh(Mesh.Object);
 	}
 }
 
@@ -30,20 +35,15 @@ void AUmbraPillar::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ©¤©¤ Convert relative StopPositions to world space ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
-	//
-	// In the editor, StopPositions are entered as offsets from the actor's
-	// placed location (because of MakeEditWidget). We convert them once at
-	// BeginPlay so all runtime code uses world coordinates.
-
+	// Convert relative StopPositions to world space
 	FVector Origin = GetActorLocation();
 
 	if (StopPositions.Num() == 0)
 	{
-		// Safety fallback: if the designer forgot to add stops, use current location
+		// Safety fallback: use current location as sole stop
 		WorldStopPositions.Add(Origin);
 		UE_LOG(LogUmbra, Warning,
-			TEXT("UmbraPillar '%s': No stop positions configured ¡ª using spawn location as sole stop."),
+			TEXT("UmbraPillar '%s': No stop positions configured â€” using spawn location as sole stop."),
 			*GetName());
 	}
 	else
@@ -70,20 +70,16 @@ void AUmbraPillar::Tick(float DeltaSeconds)
 		return;
 	}
 
-	// ©¤©¤ Slide toward target at constant speed ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// Slide toward target at constant speed
 	FVector Current = GetActorLocation();
 	FVector Target = WorldStopPositions[TargetStopIndex];
 
-	// VInterpConstantTo moves at exactly SlideSpeed UU/s, frame-rate independent
 	FVector NewLocation = FMath::VInterpConstantTo(Current, Target, DeltaSeconds, SlideSpeed);
-
-	// Sweep = true so the pillar stops if it hits unexpected geometry
 	SetActorLocation(NewLocation, /*bSweep=*/true);
 
-	// ©¤©¤ Check arrival ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// Check arrival
 	if (FVector::DistSquared(NewLocation, Target) < 1.f)
 	{
-		// Snap to exact position to avoid floating-point drift
 		SetActorLocation(Target, /*bSweep=*/false);
 		bIsSliding = false;
 		CurrentStopIndex = TargetStopIndex;
@@ -92,7 +88,6 @@ void AUmbraPillar::Tick(float DeltaSeconds)
 			TEXT("UmbraPillar '%s': Arrived at stop %d"),
 			*GetName(), CurrentStopIndex);
 
-		// Notify anyone listening (pressure plates, game mode, sound system, etc.)
 		OnSlideFinished.Broadcast(this);
 	}
 }
@@ -110,27 +105,26 @@ void AUmbraPillar::MoveToStop(int32 StopIndex)
 	if (bIsSliding)
 	{
 		UE_LOG(LogUmbra, Log,
-			TEXT("UmbraPillar '%s': Already sliding ¡ª ignoring MoveToStop(%d)"),
+			TEXT("UmbraPillar '%s': Already sliding â€” ignoring MoveToStop(%d)"),
 			*GetName(), StopIndex);
 		return;
 	}
 
 	if (StopIndex == CurrentStopIndex)
 	{
-		return; // already there, nothing to do
+		return;
 	}
 
 	TargetStopIndex = StopIndex;
 	bIsSliding = true;
 
 	UE_LOG(LogUmbra, Log,
-		TEXT("UmbraPillar '%s': Sliding from stop %d ¡ú stop %d"),
+		TEXT("UmbraPillar '%s': Sliding from stop %d â†’ stop %d"),
 		*GetName(), CurrentStopIndex, StopIndex);
 }
 
 void AUmbraPillar::AdvanceToNextStop()
 {
-	// Wrap around: 0 ¡ú 1 ¡ú 2 ¡ú ... ¡ú N-1 ¡ú 0
 	int32 NextIndex = (CurrentStopIndex + 1) % WorldStopPositions.Num();
 	MoveToStop(NextIndex);
 }
