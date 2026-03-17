@@ -74,4 +74,12 @@ private:
 
 	/** Original mesh scale, captured at respawn start */
 	FVector OriginalMeshScale;
+
+	// --- Rolling effect ---
+	/** Accumulated mesh rotation for rolling */
+	FQuat RollingRotation = FQuat::Identity;
+
+	/** Radius of the orb mesh (used to calculate roll speed) */
+	UPROPERTY(EditAnywhere, Category = "Rolling")
+	float OrbRadius = 30.f;
 };

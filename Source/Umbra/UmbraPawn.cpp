@@ -37,7 +37,7 @@ AUmbraPawn::AUmbraPawn()
 	// Angled camera
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
-	CameraBoom->SetRelativeRotation(FRotator(-55.f, 0.f, 0.f));
+	CameraBoom->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f));
 	CameraBoom->TargetArmLength = 1200.f;
 	CameraBoom->bDoCollisionTest = false;
 	CameraBoom->bInheritPitch = false;
@@ -82,6 +82,21 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		FVector Direction(CurrentMoveInput.X, CurrentMoveInput.Y, 0.f);
 		Direction = Direction.GetClampedToMaxSize(1.f);
 		AddMovementInput(Direction);
+	}
+
+	// Rolling effect — rotate mesh based on velocity
+	const FVector Velocity = GetVelocity();
+	const float Speed = Velocity.Size();
+	if (Speed > 1.f)
+	{
+		// Roll axis is perpendicular to velocity (cross with up)
+		const FVector RollAxis = FVector::CrossProduct(FVector::UpVector, Velocity).GetSafeNormal();
+		// Angular distance = linear distance / radius
+		const float RollAngle = (Speed * DeltaSeconds) / OrbRadius;
+		const FQuat DeltaRotation(RollAxis, RollAngle);
+		RollingRotation = DeltaRotation * RollingRotation;
+		RollingRotation.Normalize();
+		PawnMesh->SetWorldRotation(RollingRotation);
 	}
 
 	// Track safe ground before shadow check — only when on solid (non-bridge) ground
