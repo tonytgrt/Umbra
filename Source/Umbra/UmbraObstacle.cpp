@@ -60,6 +60,8 @@ bool AUmbraObstacle::IsLit() const
 
 	const FVector MyLocation = GetActorLocation();
 
+	bool bInAnyLightRange = false;
+
 	for (AActor* Actor : Lanterns)
 	{
 		AUmbraLantern* Lantern = Cast<AUmbraLantern>(Actor);
@@ -84,6 +86,9 @@ bool AUmbraObstacle::IsLit() const
 			continue;
 		}
 
+		// This obstacle is within at least one light's range
+		bInAnyLightRange = true;
+
 		// Line trace to check for obstructions between the light and this obstacle
 		FHitResult Hit;
 		FCollisionQueryParams Params;
@@ -105,6 +110,13 @@ bool AUmbraObstacle::IsLit() const
 		}
 	}
 
+	// If not in any light's range, stay visible (only disappear when in shadow)
+	if (!bInAnyLightRange)
+	{
+		return true;
+	}
+
+	// In range of light(s) but all are blocked — in shadow
 	return false;
 }
 
