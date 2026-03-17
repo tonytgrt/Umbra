@@ -5,6 +5,8 @@ Intermediate/
 Saved/
 DerivedDataCache/
 
+doc/Plans
+
 *.aux
 *.log
 *.out
