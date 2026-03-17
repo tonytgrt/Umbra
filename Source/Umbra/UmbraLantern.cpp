@@ -24,18 +24,19 @@ AUmbraLantern::AUmbraLantern()
 	LanternMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LanternMesh->SetCastShadow(false);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
-	if (SphereMesh.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshFinder(TEXT("/Game/lantern/source/Lantern/StaticMeshes/Lantern_01.Lantern_01"));
+	if (MeshFinder.Succeeded())
 	{
-		LanternMesh->SetStaticMesh(SphereMesh.Object);
-		LanternMesh->SetRelativeScale3D(FVector(0.4f));
+		LanternMesh->SetStaticMesh(MeshFinder.Object);
+		LanternMesh->SetRelativeScale3D(FVector(4.f));
+		LanternMesh->SetRelativeLocation(FVector(0.f, 0.f, -40.f));
 	}
 
 	// Point light
 	PointLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("PointLight"));
 	PointLight->SetupAttachment(CollisionSphere);
 	PointLight->SetIntensity(5000.f);
-	PointLight->SetAttenuationRadius(1000.f);
+	PointLight->SetAttenuationRadius(600.f);
 	PointLight->SetCastShadows(true);
 
 	LockedZ = 0.f;
