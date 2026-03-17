@@ -7,6 +7,7 @@
 #include "UmbraLightSubsystem.generated.h"
 
 class UPointLightComponent;
+class AUmbraShadowBridge;
 
 /**
  *  Tracks every shadow-casting light in the level.
@@ -24,7 +25,15 @@ public:
 
 	const TArray<TWeakObjectPtr<UPointLightComponent>>& GetLights() const { return Lights; }
 
+	void RegisterBridge(AUmbraShadowBridge* Bridge);
+	void UnregisterBridge(AUmbraShadowBridge* Bridge);
+
+	const TArray<TWeakObjectPtr<AUmbraShadowBridge>>& GetBridges() const { return Bridges; }
+
 private:
 	UPROPERTY()
 	TArray<TWeakObjectPtr<UPointLightComponent>> Lights;
+
+	UPROPERTY()
+	TArray<TWeakObjectPtr<AUmbraShadowBridge>> Bridges;
 };

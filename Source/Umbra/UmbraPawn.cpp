@@ -2,6 +2,7 @@
 
 #include "UmbraPawn.h"
 #include "UmbraLightSubsystem.h"
+#include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/PointLightComponent.h"
@@ -68,11 +69,24 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	if (bIsRespawning)
+	{
+		TickBridgeRespawn(DeltaSeconds);
+		return;
+	}
+
 	if (!CurrentMoveInput.IsNearlyZero())
 	{
 		FVector Direction(CurrentMoveInput.X, CurrentMoveInput.Y, 0.f);
 		Direction = Direction.GetClampedToMaxSize(1.f);
 		AddMovementInput(Direction);
+	}
+
+	// Track safe ground before shadow check — only when on solid (non-bridge) ground
+	bIsOnBridge = IsStandingOnBridge();
+	if (!bIsOnBridge)
+	{
+		LastSafeLocation = GetActorLocation();
 	}
 
 	PerformShadowCheck();
@@ -176,5 +190,115 @@ void AUmbraPawn::PerformShadowCheck()
 	{
 		UE_LOG(LogUmbra, Log, TEXT("Pawn shadow state changed: %s"),
 			bIsInShadow ? TEXT("IN SHADOW") : TEXT("LIT"));
+
+		if (bIsInShadow)
+		{
+			SetAllBridgesEnabled(true);
+		}
+		else
+		{
+			SetAllBridgesEnabled(false);
+
+			// If the player was on a bridge when shadow disappeared, animate back to safety
+			if (bIsOnBridge)
+			{
+				StartBridgeRespawn();
+			}
+		}
+	}
+}
+
+bool AUmbraPawn::IsStandingOnBridge() const
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 20.f);
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
+	{
+		return Hit.GetActor() && Hit.GetActor()->IsA<AUmbraShadowBridge>();
+	}
+
+	return false;
+}
+
+void AUmbraPawn::StartBridgeRespawn()
+{
+	UE_LOG(LogUmbra, Log, TEXT("Lost shadow while on bridge — respawning to last safe location"));
+
+	bIsRespawning = true;
+	RespawnElapsed = 0.f;
+	RespawnStartLocation = GetActorLocation();
+	RespawnTargetLocation = LastSafeLocation;
+	OriginalMeshScale = PawnMesh->GetRelativeScale3D();
+
+	// Disable movement and collision so the pawn doesn't interact mid-animation
+	GetCharacterMovement()->DisableMovement();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AUmbraPawn::TickBridgeRespawn(float DeltaSeconds)
+{
+	RespawnElapsed += DeltaSeconds;
+
+	if (RespawnElapsed <= RespawnShrinkDuration)
+	{
+		// Phase 1: shrink mesh to zero
+		const float Alpha = RespawnElapsed / RespawnShrinkDuration;
+		PawnMesh->SetRelativeScale3D(FMath::Lerp(OriginalMeshScale, FVector::ZeroVector, Alpha));
+	}
+	else if (RespawnElapsed <= RespawnShrinkDuration + RespawnMoveDuration)
+	{
+		// Phase 2: smoothly move to safe location (mesh stays at zero)
+		PawnMesh->SetRelativeScale3D(FVector::ZeroVector);
+		const float Alpha = (RespawnElapsed - RespawnShrinkDuration) / RespawnMoveDuration;
+		const float Smooth = FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.f);
+		SetActorLocation(FMath::Lerp(RespawnStartLocation, RespawnTargetLocation, Smooth));
+	}
+	else if (RespawnElapsed <= RespawnTotalDuration)
+	{
+		// Phase 3: grow mesh back
+		SetActorLocation(RespawnTargetLocation);
+		const float Alpha = (RespawnElapsed - RespawnShrinkDuration - RespawnMoveDuration) / RespawnGrowDuration;
+		PawnMesh->SetRelativeScale3D(FMath::Lerp(FVector::ZeroVector, OriginalMeshScale, Alpha));
+	}
+	else
+	{
+		// Done — restore everything
+		PawnMesh->SetRelativeScale3D(OriginalMeshScale);
+		SetActorLocation(RespawnTargetLocation);
+
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
+		bIsRespawning = false;
+		bIsOnBridge = false;
+	}
+}
+
+void AUmbraPawn::SetAllBridgesEnabled(bool bEnabled)
+{
+	UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>();
+	if (!Sub)
+	{
+		return;
+	}
+
+	for (const TWeakObjectPtr<AUmbraShadowBridge>& BridgePtr : Sub->GetBridges())
+	{
+		if (AUmbraShadowBridge* Bridge = BridgePtr.Get())
+		{
+			if (bEnabled)
+			{
+				Bridge->EnableBridge();
+			}
+			else
+			{
+				Bridge->DisableBridge();
+			}
+		}
 	}
 }

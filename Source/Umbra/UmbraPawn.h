@@ -44,4 +44,34 @@ private:
 
 	/** Is the pawn currently over a void volume? */
 	bool bIsOverVoid = false;
+
+	// --- Shadow bridge ---
+	/** Last position on solid (non-bridge) ground — used for respawn */
+	FVector LastSafeLocation;
+
+	/** True when the pawn is standing on a shadow bridge */
+	bool bIsOnBridge = false;
+
+	/** Downward trace to check if the floor actor is a shadow bridge */
+	bool IsStandingOnBridge() const;
+
+	/** Enable or disable all registered shadow bridges */
+	void SetAllBridgesEnabled(bool bEnabled);
+
+	// --- Bridge respawn animation ---
+	void StartBridgeRespawn();
+	void TickBridgeRespawn(float DeltaSeconds);
+
+	bool bIsRespawning = false;
+	FVector RespawnStartLocation;
+	FVector RespawnTargetLocation;
+	float RespawnElapsed = 0.f;
+
+	static constexpr float RespawnShrinkDuration = 0.2f;
+	static constexpr float RespawnMoveDuration = 0.4f;
+	static constexpr float RespawnGrowDuration = 0.2f;
+	static constexpr float RespawnTotalDuration = RespawnShrinkDuration + RespawnMoveDuration + RespawnGrowDuration;
+
+	/** Original mesh scale, captured at respawn start */
+	FVector OriginalMeshScale;
 };
