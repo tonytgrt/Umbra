@@ -58,6 +58,8 @@ AUmbraPawn::AUmbraPawn()
 	// Don't rotate the pawn to face movement direction
 	bUseControllerRotationYaw = false;
 	MoveComp->bOrientRotationToMovement = false;
+
+	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
 }
 
 void AUmbraPawn::Tick(float DeltaSeconds)
