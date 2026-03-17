@@ -37,8 +37,8 @@ AUmbraPawn::AUmbraPawn()
 	// Angled camera
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
-	CameraBoom->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f));
-	CameraBoom->TargetArmLength = 1500.f;
+	CameraBoom->SetRelativeRotation(FRotator(-55.f, 0.f, 0.f));
+	CameraBoom->TargetArmLength = 1200.f;
 	CameraBoom->bDoCollisionTest = false;
 	CameraBoom->bInheritPitch = false;
 	CameraBoom->bInheritYaw = false;
