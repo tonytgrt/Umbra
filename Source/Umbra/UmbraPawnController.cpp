@@ -91,6 +91,7 @@ void AUmbraPawnController::OnMouseClickStarted()
 		{
 			DragTarget.SetInterface(Cast<IUmbraInteractable>(Hit.GetActor()));
 			DragTarget.SetObject(Hit.GetActor());
+			DragPlaneZ = Hit.GetActor()->GetActorLocation().Z;
 			IUmbraInteractable::Execute_OnDragStart(Hit.GetActor(), Hit.Location);
 		}
 	}
@@ -100,10 +101,22 @@ void AUmbraPawnController::OnMouseClickTriggered()
 {
 	if (DragTarget)
 	{
-		FHitResult Hit;
-		if (GetHitResultUnderCursor(ECC_Visibility, true, Hit))
+		// Project cursor onto the horizontal plane at the drag target's Z height
+		// instead of tracing against world geometry, so fast mouse movement
+		// can't cause the lantern to jump to a distant hit point.
+		FVector WorldOrigin, WorldDirection;
+		if (DeprojectMousePositionToWorld(WorldOrigin, WorldDirection))
 		{
-			IUmbraInteractable::Execute_OnDragUpdate(DragTarget.GetObject(), Hit.Location);
+			// Ray-plane intersection: solve for t where (Origin + t*Dir).Z == DragPlaneZ
+			if (FMath::Abs(WorldDirection.Z) > KINDA_SMALL_NUMBER)
+			{
+				const float T = (DragPlaneZ - WorldOrigin.Z) / WorldDirection.Z;
+				if (T > 0.f)
+				{
+					const FVector PlaneHit = WorldOrigin + WorldDirection * T;
+					IUmbraInteractable::Execute_OnDragUpdate(DragTarget.GetObject(), PlaneHit);
+				}
+			}
 		}
 	}
 }

@@ -55,4 +55,7 @@ private:
 	// --- State ---
 	FVector2D CachedMoveInput;
 	TScriptInterface<IUmbraInteractable> DragTarget;
+
+	/** Z height of the drag plane, captured when the drag starts */
+	float DragPlaneZ = 0.f;
 };

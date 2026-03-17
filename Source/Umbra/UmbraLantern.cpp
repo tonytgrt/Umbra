@@ -1,6 +1,7 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraLantern.h"
+#include "UmbraLightSubsystem.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -38,6 +39,26 @@ AUmbraLantern::AUmbraLantern()
 	PointLight->SetCastShadows(true);
 
 	LockedZ = 0.f;
+}
+
+void AUmbraLantern::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
+	{
+		Sub->RegisterLight(PointLight);
+	}
+}
+
+void AUmbraLantern::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
+	{
+		Sub->UnregisterLight(PointLight);
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AUmbraLantern::OnDragStart_Implementation(FVector WorldPos)

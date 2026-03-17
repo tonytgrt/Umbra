@@ -23,6 +23,9 @@ class AUmbraLantern : public AActor, public IUmbraInteractable
 public:
 	AUmbraLantern();
 
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 protected:
 	// --- IUmbraInteractable ---
 	virtual void OnDragStart_Implementation(FVector WorldPos) override;
