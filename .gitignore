@@ -5,6 +5,9 @@ Intermediate/
 Saved/
 DerivedDataCache/
 
+.claude/
+.idea/
+
 doc/Plans
 
 *.aux
