@@ -1,12 +1,16 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraPawn.h"
+#include "UmbraLightSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PointLightComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "DrawDebugHelpers.h"
+#include "Umbra.h"
 
 AUmbraPawn::AUmbraPawn()
 {
@@ -70,6 +74,8 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		Direction = Direction.GetClampedToMaxSize(1.f);
 		AddMovementInput(Direction);
 	}
+
+	PerformShadowCheck();
 }
 
 void AUmbraPawn::SetMoveInput(FVector2D Input)
@@ -79,5 +85,96 @@ void AUmbraPawn::SetMoveInput(FVector2D Input)
 
 void AUmbraPawn::PerformShadowCheck()
 {
-	// TODO: Phase 1 — raycast to each light, check if pawn is in shadow over void
+	UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>();
+	if (!Sub)
+	{
+		bIsInShadow = false;
+		return;
+	}
+
+	const TArray<TWeakObjectPtr<UPointLightComponent>>& Lights = Sub->GetLights();
+	if (Lights.IsEmpty())
+	{
+		bIsInShadow = false;
+		return;
+	}
+
+	// Trace from the pawn's feet, not the capsule center, so shadow detection
+	// matches the visual shadows projected onto the ground plane.
+	const FVector PawnLocation = GetActorLocation() - FVector(0.f, 0.f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	bool bAnyBlocked = false;
+
+	for (const TWeakObjectPtr<UPointLightComponent>& LightPtr : Lights)
+	{
+		UPointLightComponent* Light = LightPtr.Get();
+		if (!Light)
+		{
+			continue;
+		}
+
+		const FVector LightLocation = Light->GetComponentLocation();
+
+		// Skip lights whose attenuation doesn't reach the pawn
+		const float Distance = FVector::Dist(PawnLocation, LightLocation);
+		if (Distance > Light->AttenuationRadius)
+		{
+#if ENABLE_DRAW_DEBUG
+			DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
+				FColor::Orange, false, -1.f, 0, 1.f);
+#endif
+			continue;
+		}
+
+		// Trace from pawn towards the light
+		FCollisionQueryParams LightQueryParams = QueryParams;
+		LightQueryParams.AddIgnoredActor(Light->GetOwner());
+
+		FHitResult Hit;
+		bool bHit = GetWorld()->LineTraceSingleByChannel(
+			Hit,
+			PawnLocation,
+			LightLocation,
+			ECC_Visibility,
+			LightQueryParams
+		);
+
+		if (!bHit)
+		{
+#if ENABLE_DRAW_DEBUG
+			DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
+				FColor::Green, false, -1.f, 0, 2.f);
+#endif
+		}
+		else
+		{
+			// Something blocks this light — pawn is in its shadow
+			bAnyBlocked = true;
+#if ENABLE_DRAW_DEBUG
+			DrawDebugLine(GetWorld(), PawnLocation, Hit.ImpactPoint,
+				FColor::Red, false, -1.f, 0, 2.f);
+			DrawDebugLine(GetWorld(), Hit.ImpactPoint, LightLocation,
+				FColor(255, 80, 80), false, -1.f, 0, 1.f);
+			DrawDebugPoint(GetWorld(), Hit.ImpactPoint, 8.f, FColor::Red, false, -1.f);
+#endif
+		}
+	}
+
+	const bool bWasInShadow = bIsInShadow;
+	bIsInShadow = bAnyBlocked;
+
+#if ENABLE_DRAW_DEBUG
+	// Sphere around pawn: purple = in shadow, yellow = lit
+	DrawDebugSphere(GetWorld(), PawnLocation, 50.f, 12,
+		bIsInShadow ? FColor::Purple : FColor::Yellow,
+		false, -1.f, 0, 2.f);
+#endif
+
+	if (bIsInShadow != bWasInShadow)
+	{
+		UE_LOG(LogUmbra, Log, TEXT("Pawn shadow state changed: %s"),
+			bIsInShadow ? TEXT("IN SHADOW") : TEXT("LIT"));
+	}
 }

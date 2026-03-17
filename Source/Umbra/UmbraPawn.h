@@ -39,6 +39,9 @@ private:
 	// --- Shadow check (Phase 1) ---
 	void PerformShadowCheck();
 
+	/** True when every light source is blocked — pawn is fully in shadow */
+	bool bIsInShadow = false;
+
 	/** Is the pawn currently over a void volume? */
 	bool bIsOverVoid = false;
 };
