@@ -12,7 +12,7 @@ AUmbraPillar::AUmbraPillar()
 
 	// Box collision (blocks visibility traces so it casts "shadow")
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
-	CollisionBox->SetBoxExtent(FVector(30.f, 30.f, 120.f));
+	CollisionBox->SetBoxExtent(FVector(30.f, 30.f, 100.f));
 	CollisionBox->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	SetRootComponent(CollisionBox);
