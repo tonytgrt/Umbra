@@ -27,6 +27,7 @@ public class Umbra : ModuleRules
 
 		PublicIncludePaths.AddRange(new string[] {
 			"Umbra",
+            "Umbra/UI",
 			"Umbra/Variant_Strategy",
 			"Umbra/Variant_Strategy/UI",
 			"Umbra/Variant_TwinStick",
