@@ -32,14 +32,22 @@ AUmbraObstacle::AUmbraObstacle()
 	}
 
 	bCurrentlyActive = true;
+	TargetZOffset = 0.f;
+	CurrentZOffset = 0.f;
 }
 
 void AUmbraObstacle::BeginPlay()
 {
 	Super::BeginPlay();
 
+	OriginalLocation = GetActorLocation();
+
 	// Start in the correct state
-	SetObstacleActive(IsLit());
+	const bool bLit = IsLit();
+	TargetZOffset = bLit ? 0.f : -SinkDepth;
+	CurrentZOffset = TargetZOffset;
+	SetActorLocation(OriginalLocation + FVector(0.f, 0.f, CurrentZOffset));
+	SetObstacleActive(bLit);
 }
 
 void AUmbraObstacle::Tick(float DeltaTime)
@@ -47,8 +55,18 @@ void AUmbraObstacle::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	const bool bShouldBeActive = IsLit();
-	if (bShouldBeActive != bCurrentlyActive)
+	TargetZOffset = bShouldBeActive ? 0.f : -SinkDepth;
+
+	// Smoothly move toward target
+	if (!FMath::IsNearlyEqual(CurrentZOffset, TargetZOffset, 1.f))
 	{
+		CurrentZOffset = FMath::FInterpConstantTo(CurrentZOffset, TargetZOffset, DeltaTime, MoveSpeed);
+		SetActorLocation(OriginalLocation + FVector(0.f, 0.f, CurrentZOffset));
+	}
+	else if (bShouldBeActive != bCurrentlyActive)
+	{
+		// Only toggle collision once the movement finishes
+		CurrentZOffset = TargetZOffset;
 		SetObstacleActive(bShouldBeActive);
 	}
 }
@@ -58,7 +76,7 @@ bool AUmbraObstacle::IsLit() const
 	TArray<AActor*> Lanterns;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AUmbraLantern::StaticClass(), Lanterns);
 
-	const FVector MyLocation = GetActorLocation();
+	const FVector MyLocation = OriginalLocation + FVector(0.f, 0.f, 50.f);
 
 	bool bInAnyLightRange = false;
 
@@ -123,7 +141,5 @@ bool AUmbraObstacle::IsLit() const
 void AUmbraObstacle::SetObstacleActive(bool bActive)
 {
 	bCurrentlyActive = bActive;
-
-	SetActorHiddenInGame(!bActive);
 	SetActorEnableCollision(bActive);
 }

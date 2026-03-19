@@ -43,4 +43,21 @@ private:
 
 	/** Current active state so we only toggle on change. */
 	bool bCurrentlyActive;
+
+	/** Original world location when fully raised. */
+	FVector OriginalLocation;
+
+	/** How far below ground the obstacle sinks. */
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float SinkDepth = 400.f;
+
+	/** How fast the obstacle rises/sinks (units per second). */
+	UPROPERTY(EditAnywhere, Category = "Obstacle")
+	float MoveSpeed = 200.f;
+
+	/** Target Z offset: 0 when lit, -SinkDepth when in shadow. */
+	float TargetZOffset;
+
+	/** Current Z offset from original location. */
+	float CurrentZOffset;
 };
