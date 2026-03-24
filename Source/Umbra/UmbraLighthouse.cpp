@@ -10,30 +10,53 @@ AUmbraLighthouse::AUmbraLighthouse()
     LighthouseRoot = CreateDefaultSubobject<USceneComponent>(TEXT("LighthouseRoot"));
     SetRootComponent(LighthouseRoot);
 
-    SpotLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("SpotLight"));
-    SpotLight->SetupAttachment(LighthouseRoot);
-    SpotLight->SetIntensity(0.f);           // off by default
-    SpotLight->SetVisibility(false);
-    SpotLight->SetInnerConeAngle(22.f);
-    SpotLight->SetOuterConeAngle(30.f);
-    SpotLight->SetAttenuationRadius(2000.f);
-    SpotLight->SetCastShadows(true);        // critical for shadow puzzle mechanic
+    LighthouseSpotLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("LighthouseSpotLight"));
+    LighthouseSpotLight->SetupAttachment(LighthouseRoot);
+    LighthouseSpotLight->SetIntensity(0.f);           // off by default
+    LighthouseSpotLight->SetVisibility(false);
+    LighthouseSpotLight->SetInnerConeAngle(22.f);
+    LighthouseSpotLight->SetOuterConeAngle(30.f);
+    LighthouseSpotLight->SetAttenuationRadius(2000.f);
+    LighthouseSpotLight->SetCastShadows(true);        // critical for shadow puzzle mechanic
 }
 
 void AUmbraLighthouse::BeginPlay()
 {
     Super::BeginPlay();
 
+    // Attach spotlight to the Blueprint's Bulb_Top component (if it exists)
+    if (USceneComponent* BulbTop = FindComponentByTag<USceneComponent>(TEXT("BulbTop")))
+    {
+        LighthouseSpotLight->AttachToComponent(BulbTop, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+    }
+    else
+    {
+        // Fallback: try finding by name
+        TArray<UActorComponent*> Comps;
+        GetComponents(Comps);
+        for (UActorComponent* Comp : Comps)
+        {
+            if (USceneComponent* SC = Cast<USceneComponent>(Comp))
+            {
+                if (SC->GetName().Contains(TEXT("Bulb_Top")))
+                {
+                    LighthouseSpotLight->AttachToComponent(SC, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+                    break;
+                }
+            }
+        }
+    }
+
     CurrentYaw = StartYaw;
     SweepDirection = 1.f;
 
     // Apply designer settings to the spotlight component
-    SpotLight->SetInnerConeAngle(InnerConeAngle);
-    SpotLight->SetOuterConeAngle(OuterConeAngle);
-    SpotLight->SetAttenuationRadius(AttenuationRadius);
-    SpotLight->SetRelativeRotation(FRotator(SpotPitch, StartYaw, 0.f));
+    LighthouseSpotLight->SetInnerConeAngle(InnerConeAngle);
+    LighthouseSpotLight->SetOuterConeAngle(OuterConeAngle);
+    LighthouseSpotLight->SetAttenuationRadius(AttenuationRadius);
+    LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, StartYaw, 0.f));
 
-    // Do NOT register with subsystem yet ¡ª only on Activate()
+    // Do NOT register with subsystem yet ï¿½ï¿½ only on Activate()
 }
 
 void AUmbraLighthouse::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -43,7 +66,7 @@ void AUmbraLighthouse::EndPlay(const EEndPlayReason::Type EndPlayReason)
     {
         if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
         {
-            Sub->UnregisterLight(SpotLight);
+            Sub->UnregisterLight(LighthouseSpotLight);
         }
     }
 
@@ -73,7 +96,7 @@ void AUmbraLighthouse::Tick(float DeltaSeconds)
         SweepDirection = 1.f;
     }
 
-    SpotLight->SetRelativeRotation(FRotator(SpotPitch, CurrentYaw, 0.f));
+    LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, CurrentYaw, 0.f));
 }
 
 void AUmbraLighthouse::Activate()
@@ -84,13 +107,13 @@ void AUmbraLighthouse::Activate()
     }
 
     bIsActivated = true;
-    SpotLight->SetIntensity(LightIntensity);
-    SpotLight->SetVisibility(true);
+    LighthouseSpotLight->SetIntensity(LightIntensity);
+    LighthouseSpotLight->SetVisibility(true);
 
     // Register with the light subsystem so shadow checks include this light
     if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
     {
-        Sub->RegisterLight(SpotLight);
+        Sub->RegisterLight(LighthouseSpotLight);
     }
 
     UE_LOG(LogUmbra, Log, TEXT("Lighthouse '%s': Activated"), *GetName());
@@ -105,12 +128,12 @@ void AUmbraLighthouse::Deactivate()
     }
 
     bIsActivated = false;
-    SpotLight->SetIntensity(0.f);
-    SpotLight->SetVisibility(false);
+    LighthouseSpotLight->SetIntensity(0.f);
+    LighthouseSpotLight->SetVisibility(false);
 
     if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
     {
-        Sub->UnregisterLight(SpotLight);
+        Sub->UnregisterLight(LighthouseSpotLight);
     }
 
     UE_LOG(LogUmbra, Log, TEXT("Lighthouse '%s': Deactivated"), *GetName());

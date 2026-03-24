@@ -48,7 +48,7 @@ protected:
 
     // -- Components -----------------------------------------------------------
 
-    /** Root scene component (attach point ¡ª the Blueprint reparents here). */
+    /** Root scene component (attach point ï¿½ï¿½ the Blueprint reparents here). */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<USceneComponent> LighthouseRoot;
 
@@ -57,7 +57,7 @@ protected:
      *  Created in C++ so we can register it with the light subsystem.
      */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-    TObjectPtr<USpotLightComponent> SpotLight;
+    TObjectPtr<USpotLightComponent> LighthouseSpotLight;
 
 private:
     // -- Designer-specified data ----------------------------------------------
