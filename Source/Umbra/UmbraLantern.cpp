@@ -40,6 +40,20 @@ AUmbraLantern::AUmbraLantern()
 	PointLight->SetCastShadows(true);
 
 	LockedZ = 0.f;
+
+	// Bounds plane — hidden by default, shown while dragging
+	BoundsPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BoundsPlane"));
+	BoundsPlane->SetupAttachment(CollisionSphere);
+	BoundsPlane->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoundsPlane->SetCastShadow(false);
+	BoundsPlane->SetVisibility(false);
+	BoundsPlane->SetAbsolute(true, true, true);  // use world transform so bounds match world space
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneFinder(TEXT("/Engine/BasicShapes/Plane.Plane"));
+	if (PlaneFinder.Succeeded())
+	{
+		BoundsPlane->SetStaticMesh(PlaneFinder.Object);
+	}
 }
 
 void AUmbraLantern::BeginPlay()
@@ -65,15 +79,59 @@ void AUmbraLantern::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AUmbraLantern::OnDragStart_Implementation(FVector WorldPos)
 {
 	LockedZ = GetActorLocation().Z;
+
+	// Show bounds plane while dragging
+	if (bUseBounds && BoundsPlane)
+	{
+		UpdateBoundsPlane();
+		if (BoundsPlaneMaterial)
+		{
+			BoundsPlane->SetMaterial(0, BoundsPlaneMaterial);
+		}
+		BoundsPlane->SetVisibility(true);
+	}
 }
 
 void AUmbraLantern::OnDragUpdate_Implementation(FVector WorldPos)
 {
 	FVector Desired(WorldPos.X, WorldPos.Y, LockedZ);
+
+	// Clamp to rectangle bounds if enabled
+	if (bUseBounds)
+	{
+		Desired.X = FMath::Clamp(Desired.X, BoundsMin.X, BoundsMax.X);
+		Desired.Y = FMath::Clamp(Desired.Y, BoundsMin.Y, BoundsMax.Y);
+	}
+
 	SetActorLocation(Desired, true);  // sweep = true, stops at collision
 }
 
 void AUmbraLantern::OnDragEnd_Implementation()
 {
-	// Nothing needed for now
+	// Hide bounds plane when drag ends
+	if (BoundsPlane)
+	{
+		BoundsPlane->SetVisibility(false);
+	}
+}
+
+void AUmbraLantern::UpdateBoundsPlane()
+{
+	if (!BoundsPlane) return;
+
+	// Center of the bounds rectangle
+	const float CenterX = (BoundsMin.X + BoundsMax.X) * 0.5f;
+	const float CenterY = (BoundsMin.Y + BoundsMax.Y) * 0.5f;
+
+	// Size of the bounds rectangle
+	const float SizeX = BoundsMax.X - BoundsMin.X;
+	const float SizeY = BoundsMax.Y - BoundsMin.Y;
+
+	// Engine plane is 100x100 units, so scale accordingly
+	const float ScaleX = SizeX / 100.f;
+	const float ScaleY = SizeY / 100.f;
+
+	// Place slightly below the lantern so it doesn't z-fight with the island
+	BoundsPlane->SetWorldLocation(FVector(CenterX, CenterY, LockedZ - 75.f));
+	BoundsPlane->SetWorldScale3D(FVector(ScaleX, ScaleY, 1.f));
 }
