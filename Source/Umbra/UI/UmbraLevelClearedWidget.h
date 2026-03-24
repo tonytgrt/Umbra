@@ -22,4 +22,8 @@ protected:
     /** Called when the player clicks the Exit button to return to main menu. */
     UFUNCTION(BlueprintCallable, Category = "Menu")
     void OnExitToMenuClicked();
+
+    /** Called when the player clicks the Next Level button. Loads the next level from the game mode. */
+    UFUNCTION(BlueprintCallable, Category = "Menu")
+    void OnNextLevelClicked();
 };

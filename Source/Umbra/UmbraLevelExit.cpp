@@ -2,6 +2,7 @@
 #include "UmbraLevelExit.h"
 #include "UmbraPawn.h"
 #include "UmbraPuzzleGameMode.h"
+#include "UmbraTutorialGameMode.h"
 #include "Components/BoxComponent.h"
 
 AUmbraLevelExit::AUmbraLevelExit()
@@ -26,6 +27,10 @@ void AUmbraLevelExit::OnOverlapBegin(
         if (AUmbraPuzzleGameMode* GM = GetWorld()->GetAuthGameMode<AUmbraPuzzleGameMode>())
         {
             GM->OnLevelCleared();
+        }
+        else if (AUmbraTutorialGameMode* TutorialGM = GetWorld()->GetAuthGameMode<AUmbraTutorialGameMode>())
+        {
+            TutorialGM->OnTutorialCompleted();
         }
     }
 }
