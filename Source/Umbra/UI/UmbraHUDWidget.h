@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "UmbraHUDWidget.generated.h"
 
+class UTextBlock;
+
 /**
  *  In-game HUD widget that displays contextual help text.
  *  The visual layout (font, position, animation) is done in a Widget Blueprint.
@@ -37,4 +39,12 @@ public:
      */
     UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
     void SetObjectiveText(const FText& Objective);
+
+    /** Set the level name displayed on the HUD. */
+    void SetLevelName(const FText& Name);
+
+private:
+    /** TextBlock named "Level" in the Widget Blueprint. */
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UTextBlock> Level;
 };

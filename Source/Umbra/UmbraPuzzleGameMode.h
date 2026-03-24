@@ -51,6 +51,10 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Puzzle")
     FName NextLevelName;
 
+    /** Display name shown on the HUD, e.g. "Level 1", "Level 2". */
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    FText LevelDisplayName;
+
     UPROPERTY()
     TObjectPtr<UUmbraHUDWidget> HUDWidget;
 

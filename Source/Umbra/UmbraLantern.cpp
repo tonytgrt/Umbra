@@ -132,6 +132,6 @@ void AUmbraLantern::UpdateBoundsPlane()
 	const float ScaleY = SizeY / 100.f;
 
 	// Place slightly below the lantern so it doesn't z-fight with the island
-	BoundsPlane->SetWorldLocation(FVector(CenterX, CenterY, LockedZ - 75.f));
+	BoundsPlane->SetWorldLocation(FVector(CenterX, CenterY, LockedZ - 78.f));
 	BoundsPlane->SetWorldScale3D(FVector(ScaleX, ScaleY, 1.f));
 }

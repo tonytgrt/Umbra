@@ -35,6 +35,10 @@ void AUmbraPuzzleGameMode::BeginPlay()
         if (HUDWidget)
         {
             HUDWidget->AddToViewport(0);
+            if (!LevelDisplayName.IsEmpty())
+            {
+                HUDWidget->SetLevelName(LevelDisplayName);
+            }
         }
     }
 
