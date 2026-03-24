@@ -56,7 +56,8 @@ void AUmbraLighthouse::BeginPlay()
     LighthouseSpotLight->SetAttenuationRadius(AttenuationRadius);
     LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, StartYaw, 0.f));
 
-    // Do NOT register with subsystem yet �� only on Activate()
+    // TODO: Remove this debug auto-activation once battery/drop-off is placed
+    Activate();
 }
 
 void AUmbraLighthouse::EndPlay(const EEndPlayReason::Type EndPlayReason)
