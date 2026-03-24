@@ -3,7 +3,9 @@
 #include "UmbraShadowBridge.h"
 #include "UmbraLightSubsystem.h"
 #include "Components/BoxComponent.h"
+#include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "DrawDebugHelpers.h"
 
 AUmbraShadowBridge::AUmbraShadowBridge()
@@ -56,7 +58,7 @@ void AUmbraShadowBridge::Tick(float DeltaSeconds)
 	UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>();
 	if (Sub)
 	{
-		const TArray<TWeakObjectPtr<UPointLightComponent>>& Lights = Sub->GetLights();
+		const TArray<TWeakObjectPtr<ULightComponent>>& Lights = Sub->GetLights();
 		const FVector ScaledExtent = BridgeBox->GetScaledBoxExtent();
 		const FVector BoxCenter = BridgeBox->GetComponentLocation();
 		const FQuat BoxRot = BridgeBox->GetComponentQuat();
@@ -79,18 +81,42 @@ void AUmbraShadowBridge::Tick(float DeltaSeconds)
 
 				bool bPointInShadow = false;
 
-				for (const TWeakObjectPtr<UPointLightComponent>& LightPtr : Lights)
+				for (const TWeakObjectPtr<ULightComponent>& LightPtr : Lights)
 				{
-					UPointLightComponent* Light = LightPtr.Get();
+					ULightComponent* Light = LightPtr.Get();
 					if (!Light)
 					{
 						continue;
 					}
 
 					const FVector LightLoc = Light->GetComponentLocation();
-					if (FVector::Dist(WorldPos, LightLoc) > Light->AttenuationRadius)
+
+					// Get attenuation radius based on light type
+					float Radius = 10000.f;
+					if (const UPointLightComponent* PL = Cast<UPointLightComponent>(Light))
+					{
+						Radius = PL->AttenuationRadius;
+					}
+					else if (const USpotLightComponent* SL = Cast<USpotLightComponent>(Light))
+					{
+						Radius = SL->AttenuationRadius;
+					}
+
+					if (FVector::Dist(WorldPos, LightLoc) > Radius)
 					{
 						continue;
+					}
+
+					// For spotlights, skip if point is outside the cone
+					if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
+					{
+						const FVector LightForward = Spot->GetForwardVector();
+						const FVector LightToPoint = (WorldPos - LightLoc).GetSafeNormal();
+						const float ConeHalfAngleRad = FMath::DegreesToRadians(Spot->OuterConeAngle);
+						if (FVector::DotProduct(LightForward, LightToPoint) < FMath::Cos(ConeHalfAngleRad))
+						{
+							continue;
+						}
 					}
 
 					FCollisionQueryParams LightParams = QueryParams;

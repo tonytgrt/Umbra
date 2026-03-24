@@ -1,11 +1,14 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraPawn.h"
+#include "UmbraBattery.h"
 #include "UmbraLightSubsystem.h"
 #include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -65,6 +68,11 @@ AUmbraPawn::AUmbraPawn()
 	MoveComp->bOrientRotationToMovement = false;
 
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
+
+	// Anchor point for the floating battery indicator
+	BatteryAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("BatteryAnchor"));
+	BatteryAnchor->SetupAttachment(GetRootComponent());
+	BatteryAnchor->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
 }
 
 void AUmbraPawn::Tick(float DeltaSeconds)
@@ -99,6 +107,12 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		PawnMesh->SetWorldRotation(RollingRotation);
 	}
 
+	// Spin the carried battery above the pawn
+	if (bCarryingBattery && CarriedBattery)
+	{
+		BatteryAnchor->AddLocalRotation(FRotator(0.f, BatterySpinSpeed * DeltaSeconds, 0.f));
+	}
+
 	// Track safe ground before shadow check  -  only when on solid (non-bridge) ground
 	bIsOnBridge = IsStandingOnBridge();
 	if (!bIsOnBridge)
@@ -123,7 +137,7 @@ void AUmbraPawn::PerformShadowCheck()
 		return;
 	}
 
-	const TArray<TWeakObjectPtr<UPointLightComponent>>& Lights = Sub->GetLights();
+	const TArray<TWeakObjectPtr<ULightComponent>>& Lights = Sub->GetLights();
 	if (Lights.IsEmpty())
 	{
 		bIsInShadow = false;
@@ -138,9 +152,9 @@ void AUmbraPawn::PerformShadowCheck()
 
 	bool bAnyBlocked = false;
 
-	for (const TWeakObjectPtr<UPointLightComponent>& LightPtr : Lights)
+	for (const TWeakObjectPtr<ULightComponent>& LightPtr : Lights)
 	{
-		UPointLightComponent* Light = LightPtr.Get();
+		ULightComponent* Light = LightPtr.Get();
 		if (!Light)
 		{
 			continue;
@@ -148,15 +162,42 @@ void AUmbraPawn::PerformShadowCheck()
 
 		const FVector LightLocation = Light->GetComponentLocation();
 
+		// Get attenuation radius based on light type
+		float AttenuationRadius = 10000.f;
+		if (const UPointLightComponent* PL = Cast<UPointLightComponent>(Light))
+		{
+			AttenuationRadius = PL->AttenuationRadius;
+		}
+		else if (const USpotLightComponent* SL = Cast<USpotLightComponent>(Light))
+		{
+			AttenuationRadius = SL->AttenuationRadius;
+		}
+
 		// Skip lights whose attenuation doesn't reach the pawn
 		const float Distance = FVector::Dist(PawnLocation, LightLocation);
-		if (Distance > Light->AttenuationRadius)
+		if (Distance > AttenuationRadius)
 		{
 #if ENABLE_DRAW_DEBUG
 			DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
 				FColor::Orange, false, -1.f, 0, 1.f);
 #endif
 			continue;
+		}
+
+		// For spotlights, skip if pawn is outside the cone
+		if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
+		{
+			const FVector LightForward = Spot->GetForwardVector();
+			const FVector LightToPawn = (PawnLocation - LightLocation).GetSafeNormal();
+			const float ConeHalfAngleRad = FMath::DegreesToRadians(Spot->OuterConeAngle);
+			if (FVector::DotProduct(LightForward, LightToPawn) < FMath::Cos(ConeHalfAngleRad))
+			{
+#if ENABLE_DRAW_DEBUG
+				DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
+					FColor::Orange, false, -1.f, 0, 1.f);
+#endif
+				continue;
+			}
 		}
 
 		// Trace from pawn towards the light
@@ -318,4 +359,67 @@ void AUmbraPawn::SetAllBridgesEnabled(bool bEnabled)
 			}
 		}
 	}
+}
+
+void AUmbraPawn::PickUpBattery(AUmbraBattery* Battery)
+{
+	if (bCarryingBattery || !Battery)
+	{
+		return;
+	}
+
+	bCarryingBattery = true;
+	CarriedBattery = Battery;
+
+	// Disable the battery's collision so it stops triggering overlaps
+	Battery->SetActorEnableCollision(false);
+
+	// Attach the battery actor to our anchor point above the pawn
+	Battery->AttachToComponent(BatteryAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	// Save original scale, then shrink for the floating indicator
+	if (UStaticMeshComponent* BattMesh = Battery->GetBatteryMesh())
+	{
+		OriginalBatteryScale = BattMesh->GetRelativeScale3D();
+		BattMesh->SetRelativeScale3D(FVector(0.2f));
+	}
+
+	// Reset anchor rotation so spinning starts clean
+	BatteryAnchor->SetRelativeRotation(FRotator::ZeroRotator);
+
+	UE_LOG(LogUmbra, Log, TEXT("Pawn: Now carrying a battery"));
+}
+
+void AUmbraPawn::DropBattery(const FVector& DropLocation)
+{
+	if (!bCarryingBattery)
+	{
+		return;
+	}
+
+	bCarryingBattery = false;
+
+	if (CarriedBattery)
+	{
+		// Detach and place at the drop-off location
+		CarriedBattery->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CarriedBattery->SetActorLocation(DropLocation);
+		CarriedBattery->SetActorRotation(FRotator::ZeroRotator);
+
+		// Restore original scale and offset upward so it sits on the ground
+		if (UStaticMeshComponent* BattMesh = CarriedBattery->GetBatteryMesh())
+		{
+			BattMesh->SetRelativeScale3D(OriginalBatteryScale);
+
+			// Get the mesh bounds to calculate how far up to shift
+			const FVector MeshExtent = BattMesh->CalcLocalBounds().BoxExtent * OriginalBatteryScale;
+			CarriedBattery->SetActorLocation(DropLocation + FVector(0.f, 0.f, MeshExtent.Z));
+		}
+
+		// Collision stays disabled so it can't be picked up again
+		CarriedBattery->StopSpinning();
+		CarriedBattery = nullptr;
+	}
+
+	UE_LOG(LogUmbra, Log, TEXT("Pawn: Dropped battery"));
 }

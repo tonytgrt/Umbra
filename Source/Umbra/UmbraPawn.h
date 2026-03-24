@@ -9,6 +9,7 @@
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
+class AUmbraBattery;
 
 UCLASS()
 class AUmbraPawn : public ACharacter
@@ -22,6 +23,19 @@ public:
 
 	/** Called by controller each tick with WASD input */
 	void SetMoveInput(FVector2D Input);
+
+	// --- Battery carrying ---
+
+	/** Called by AUmbraBattery when the player picks one up. */
+	void PickUpBattery(AUmbraBattery* Battery);
+
+	/** Called by AUmbraBatteryDropOff when the player delivers a battery.
+	 *  Places the battery at DropLocation at its original size. */
+	void DropBattery(const FVector& DropLocation);
+
+	/** Is the pawn currently carrying a battery? */
+	UFUNCTION(BlueprintPure, Category = "Umbra|Pawn")
+	bool IsCarryingBattery() const { return bCarryingBattery; }
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -84,4 +98,21 @@ private:
 	/** Radius of the orb mesh (used to calculate roll speed) */
 	UPROPERTY(EditAnywhere, Category = "Rolling")
 	float OrbRadius = 30.f;
+
+	// --- Battery state ---
+	bool bCarryingBattery = false;
+
+	/** The battery actor currently being carried (attached above pawn). */
+	UPROPERTY()
+	TObjectPtr<AUmbraBattery> CarriedBattery;
+
+	/** Anchor point above the pawn where the battery floats. */
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> BatteryAnchor;
+
+	/** Rotation speed of the floating battery (degrees/sec). */
+	float BatterySpinSpeed = 90.f;
+
+	/** Original scale of the battery mesh before shrinking. */
+	FVector OriginalBatteryScale;
 };

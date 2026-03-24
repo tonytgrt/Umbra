@@ -6,7 +6,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "UmbraLightSubsystem.generated.h"
 
-class UPointLightComponent;
+class ULightComponent;
 class AUmbraShadowBridge;
 
 /**
@@ -20,10 +20,10 @@ class UUmbraLightSubsystem : public UWorldSubsystem
 	GENERATED_BODY()
 
 public:
-	void RegisterLight(UPointLightComponent* Light);
-	void UnregisterLight(UPointLightComponent* Light);
+	void RegisterLight(ULightComponent* Light);
+	void UnregisterLight(ULightComponent* Light);
 
-	const TArray<TWeakObjectPtr<UPointLightComponent>>& GetLights() const { return Lights; }
+	const TArray<TWeakObjectPtr<ULightComponent>>& GetLights() const { return Lights; }
 
 	void RegisterBridge(AUmbraShadowBridge* Bridge);
 	void UnregisterBridge(AUmbraShadowBridge* Bridge);
@@ -32,7 +32,7 @@ public:
 
 private:
 	UPROPERTY()
-	TArray<TWeakObjectPtr<UPointLightComponent>> Lights;
+	TArray<TWeakObjectPtr<ULightComponent>> Lights;
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AUmbraShadowBridge>> Bridges;
