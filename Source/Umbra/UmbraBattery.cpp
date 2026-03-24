@@ -7,7 +7,7 @@
 
 AUmbraBattery::AUmbraBattery()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
 
     // Overlap trigger sphere
     PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
@@ -28,7 +28,7 @@ AUmbraBattery::AUmbraBattery()
     if (MeshFinder.Succeeded())
     {
         BatteryMesh->SetStaticMesh(MeshFinder.Object);
-        BatteryMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.5f));
+        BatteryMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.3f));
     }
 }
 
@@ -37,6 +37,17 @@ void AUmbraBattery::BeginPlay()
     Super::BeginPlay();
 
     PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &AUmbraBattery::OnOverlapBegin);
+    bSpinning = true;
+}
+
+void AUmbraBattery::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    if (bSpinning)
+    {
+        BatteryMesh->AddLocalRotation(FRotator(0.f, SpinSpeed * DeltaSeconds, 0.f));
+    }
 }
 
 void AUmbraBattery::OnOverlapBegin(

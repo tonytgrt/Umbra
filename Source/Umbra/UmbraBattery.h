@@ -19,6 +19,11 @@ class AUmbraBattery : public AActor
 public:
     AUmbraBattery();
 
+    virtual void Tick(float DeltaSeconds) override;
+
+    /** Stop the idle spin (called after drop-off). */
+    void StopSpinning() { bSpinning = false; }
+
 protected:
     virtual void BeginPlay() override;
 
@@ -41,4 +46,7 @@ private:
 
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UStaticMeshComponent> BatteryMesh;
+
+    bool bSpinning = false;
+    float SpinSpeed = 90.f;
 };

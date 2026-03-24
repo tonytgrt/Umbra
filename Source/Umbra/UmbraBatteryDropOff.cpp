@@ -67,7 +67,7 @@ void AUmbraBatteryDropOff::OnOverlapBegin(
         TEXT("BatteryDropOff '%s': Battery delivered. Activating lighthouse."), *GetName());
 
     bHasReceived = true;
-    Pawn->DropBattery();
+    Pawn->DropBattery(GetActorLocation());
 
     if (LinkedLighthouse)
     {

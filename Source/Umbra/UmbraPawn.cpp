@@ -377,9 +377,10 @@ void AUmbraPawn::PickUpBattery(AUmbraBattery* Battery)
 	// Attach the battery actor to our anchor point above the pawn
 	Battery->AttachToComponent(BatteryAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
-	// Shrink the battery mesh to a small floating indicator
+	// Save original scale, then shrink for the floating indicator
 	if (UStaticMeshComponent* BattMesh = Battery->GetBatteryMesh())
 	{
+		OriginalBatteryScale = BattMesh->GetRelativeScale3D();
 		BattMesh->SetRelativeScale3D(FVector(0.2f));
 	}
 
@@ -389,7 +390,7 @@ void AUmbraPawn::PickUpBattery(AUmbraBattery* Battery)
 	UE_LOG(LogUmbra, Log, TEXT("Pawn: Now carrying a battery"));
 }
 
-void AUmbraPawn::DropBattery()
+void AUmbraPawn::DropBattery(const FVector& DropLocation)
 {
 	if (!bCarryingBattery)
 	{
@@ -398,11 +399,25 @@ void AUmbraPawn::DropBattery()
 
 	bCarryingBattery = false;
 
-	// Destroy the carried battery actor
 	if (CarriedBattery)
 	{
+		// Detach and place at the drop-off location
 		CarriedBattery->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CarriedBattery->Destroy();
+		CarriedBattery->SetActorLocation(DropLocation);
+		CarriedBattery->SetActorRotation(FRotator::ZeroRotator);
+
+		// Restore original scale and offset upward so it sits on the ground
+		if (UStaticMeshComponent* BattMesh = CarriedBattery->GetBatteryMesh())
+		{
+			BattMesh->SetRelativeScale3D(OriginalBatteryScale);
+
+			// Get the mesh bounds to calculate how far up to shift
+			const FVector MeshExtent = BattMesh->CalcLocalBounds().BoxExtent * OriginalBatteryScale;
+			CarriedBattery->SetActorLocation(DropLocation + FVector(0.f, 0.f, MeshExtent.Z));
+		}
+
+		// Collision stays disabled so it can't be picked up again
+		CarriedBattery->StopSpinning();
 		CarriedBattery = nullptr;
 	}
 

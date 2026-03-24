@@ -29,8 +29,9 @@ public:
 	/** Called by AUmbraBattery when the player picks one up. */
 	void PickUpBattery(AUmbraBattery* Battery);
 
-	/** Called by AUmbraBatteryDropOff when the player delivers a battery. */
-	void DropBattery();
+	/** Called by AUmbraBatteryDropOff when the player delivers a battery.
+	 *  Places the battery at DropLocation at its original size. */
+	void DropBattery(const FVector& DropLocation);
 
 	/** Is the pawn currently carrying a battery? */
 	UFUNCTION(BlueprintPure, Category = "Umbra|Pawn")
@@ -111,4 +112,7 @@ private:
 
 	/** Rotation speed of the floating battery (degrees/sec). */
 	float BatterySpinSpeed = 90.f;
+
+	/** Original scale of the battery mesh before shrinking. */
+	FVector OriginalBatteryScale;
 };
