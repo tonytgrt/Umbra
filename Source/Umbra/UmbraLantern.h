@@ -44,4 +44,27 @@ private:
 
 	/** Lock the lantern's Z position so it stays on the same plane */
 	float LockedZ;
+
+	/** If true, clamp lantern movement to the MoveBounds rectangle */
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	bool bUseBounds = false;
+
+	/** Min corner of the allowed movement area (X, Y) in world space */
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (EditCondition = "bUseBounds"))
+	FVector2D BoundsMin = FVector2D(-500.f, -500.f);
+
+	/** Max corner of the allowed movement area (X, Y) in world space */
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (EditCondition = "bUseBounds"))
+	FVector2D BoundsMax = FVector2D(500.f, 500.f);
+
+	/** Plane mesh that shows the movement boundary while dragging */
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> BoundsPlane;
+
+	/** Material for the bounds plane (assign in Blueprint or editor) */
+	UPROPERTY(EditAnywhere, Category = "Movement", meta = (EditCondition = "bUseBounds"))
+	TObjectPtr<UMaterialInterface> BoundsPlaneMaterial;
+
+	/** Update the bounds plane position and scale to match BoundsMin/BoundsMax */
+	void UpdateBoundsPlane();
 };
