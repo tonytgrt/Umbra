@@ -108,7 +108,7 @@ private:
 
     /** Spotlight intensity when activated. */
     UPROPERTY(EditAnywhere, Category = "Umbra|Lighthouse")
-    float LightIntensity = 8000.f;
+    float LightIntensity = 100000.f;
 
     /** Spotlight cone inner angle in degrees. */
     UPROPERTY(EditAnywhere, Category = "Umbra|Lighthouse",
