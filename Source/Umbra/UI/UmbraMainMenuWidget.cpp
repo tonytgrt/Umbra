@@ -11,8 +11,8 @@ void UUmbraMainMenuWidget::NativeConstruct()
 
 void UUmbraMainMenuWidget::OnStartClicked()
 {
-    // Open the first puzzle level
-    UGameplayStatics::OpenLevel(this, FName(TEXT("Level_1")));
+    // Open the tutorial level
+    UGameplayStatics::OpenLevel(this, FName(TEXT("Level_Tutorial")));
 }
 
 void UUmbraMainMenuWidget::OnExitClicked()

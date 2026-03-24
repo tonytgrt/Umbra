@@ -31,6 +31,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     UUmbraHUDWidget* GetHUDWidget() const { return HUDWidget; }
 
+    /** Get the next level name. Empty means there is no next level. */
+    UFUNCTION(BlueprintCallable, Category = "Puzzle")
+    FName GetNextLevelName() const { return NextLevelName; }
+
 protected:
     virtual void BeginPlay() override;
 
@@ -42,6 +46,10 @@ private:
     /** Widget Blueprint class for the level-cleared screen. Set in the BP child. */
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UUmbraLevelClearedWidget> LevelClearedWidgetClass;
+
+    /** Name of the next level to load. Leave empty for the last level (menu only). */
+    UPROPERTY(EditDefaultsOnly, Category = "Puzzle")
+    FName NextLevelName;
 
     UPROPERTY()
     TObjectPtr<UUmbraHUDWidget> HUDWidget;

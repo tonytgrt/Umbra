@@ -23,7 +23,7 @@ public:
 	/** Called by controller each tick with WASD input */
 	void SetMoveInput(FVector2D Input);
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> PawnMesh;
 
@@ -32,6 +32,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UCameraComponent> TopDownCamera;
+
+private:
 
 	/** Cached input from controller */
 	FVector2D CurrentMoveInput;
