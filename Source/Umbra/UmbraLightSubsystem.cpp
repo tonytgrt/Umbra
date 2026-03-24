@@ -1,10 +1,10 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraLightSubsystem.h"
-#include "Components/PointLightComponent.h"
+#include "Components/LightComponent.h"
 #include "UmbraShadowBridge.h"
 
-void UUmbraLightSubsystem::RegisterLight(UPointLightComponent* Light)
+void UUmbraLightSubsystem::RegisterLight(ULightComponent* Light)
 {
 	if (Light)
 	{
@@ -12,7 +12,7 @@ void UUmbraLightSubsystem::RegisterLight(UPointLightComponent* Light)
 	}
 }
 
-void UUmbraLightSubsystem::UnregisterLight(UPointLightComponent* Light)
+void UUmbraLightSubsystem::UnregisterLight(ULightComponent* Light)
 {
 	Lights.RemoveSwap(Light);
 }

@@ -23,6 +23,18 @@ public:
 	/** Called by controller each tick with WASD input */
 	void SetMoveInput(FVector2D Input);
 
+	// --- Battery carrying ---
+
+	/** Called by AUmbraBattery when the player picks one up. */
+	void PickUpBattery();
+
+	/** Called by AUmbraBatteryDropOff when the player delivers a battery. */
+	void DropBattery();
+
+	/** Is the pawn currently carrying a battery? */
+	UFUNCTION(BlueprintPure, Category = "Umbra|Pawn")
+	bool IsCarryingBattery() const { return bCarryingBattery; }
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> PawnMesh;
@@ -84,4 +96,15 @@ private:
 	/** Radius of the orb mesh (used to calculate roll speed) */
 	UPROPERTY(EditAnywhere, Category = "Rolling")
 	float OrbRadius = 30.f;
+
+	// --- Battery state ---
+	bool bCarryingBattery = false;
+
+	/** Original material of the pawn mesh, saved before color change. */
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> OriginalMaterial;
+
+	/** Material instance used for the "carrying battery" color indicator. */
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> CarryingMaterial;
 };

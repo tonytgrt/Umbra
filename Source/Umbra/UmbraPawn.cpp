@@ -5,12 +5,15 @@
 #include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "DrawDebugHelpers.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Umbra.h"
 
 AUmbraPawn::AUmbraPawn()
@@ -123,7 +126,7 @@ void AUmbraPawn::PerformShadowCheck()
 		return;
 	}
 
-	const TArray<TWeakObjectPtr<UPointLightComponent>>& Lights = Sub->GetLights();
+	const TArray<TWeakObjectPtr<ULightComponent>>& Lights = Sub->GetLights();
 	if (Lights.IsEmpty())
 	{
 		bIsInShadow = false;
@@ -138,9 +141,9 @@ void AUmbraPawn::PerformShadowCheck()
 
 	bool bAnyBlocked = false;
 
-	for (const TWeakObjectPtr<UPointLightComponent>& LightPtr : Lights)
+	for (const TWeakObjectPtr<ULightComponent>& LightPtr : Lights)
 	{
-		UPointLightComponent* Light = LightPtr.Get();
+		ULightComponent* Light = LightPtr.Get();
 		if (!Light)
 		{
 			continue;
@@ -148,15 +151,42 @@ void AUmbraPawn::PerformShadowCheck()
 
 		const FVector LightLocation = Light->GetComponentLocation();
 
+		// Get attenuation radius based on light type
+		float AttenuationRadius = 10000.f;
+		if (const UPointLightComponent* PL = Cast<UPointLightComponent>(Light))
+		{
+			AttenuationRadius = PL->AttenuationRadius;
+		}
+		else if (const USpotLightComponent* SL = Cast<USpotLightComponent>(Light))
+		{
+			AttenuationRadius = SL->AttenuationRadius;
+		}
+
 		// Skip lights whose attenuation doesn't reach the pawn
 		const float Distance = FVector::Dist(PawnLocation, LightLocation);
-		if (Distance > Light->AttenuationRadius)
+		if (Distance > AttenuationRadius)
 		{
 #if ENABLE_DRAW_DEBUG
 			DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
 				FColor::Orange, false, -1.f, 0, 1.f);
 #endif
 			continue;
+		}
+
+		// For spotlights, skip if pawn is outside the cone
+		if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
+		{
+			const FVector LightForward = Spot->GetForwardVector();
+			const FVector LightToPawn = (PawnLocation - LightLocation).GetSafeNormal();
+			const float ConeHalfAngleRad = FMath::DegreesToRadians(Spot->OuterConeAngle);
+			if (FVector::DotProduct(LightForward, LightToPawn) < FMath::Cos(ConeHalfAngleRad))
+			{
+#if ENABLE_DRAW_DEBUG
+				DrawDebugLine(GetWorld(), PawnLocation, LightLocation,
+					FColor::Orange, false, -1.f, 0, 1.f);
+#endif
+				continue;
+			}
 		}
 
 		// Trace from pawn towards the light
@@ -318,4 +348,43 @@ void AUmbraPawn::SetAllBridgesEnabled(bool bEnabled)
 			}
 		}
 	}
+}
+
+void AUmbraPawn::PickUpBattery()
+{
+	if (bCarryingBattery)
+	{
+		return;
+	}
+
+	bCarryingBattery = true;
+
+	// Change pawn color to indicate carrying
+	OriginalMaterial = PawnMesh->GetMaterial(0);
+	if (!CarryingMaterial)
+	{
+		CarryingMaterial = UMaterialInstanceDynamic::Create(OriginalMaterial, this);
+		CarryingMaterial->SetVectorParameterValue(
+			TEXT("BaseColor"), FLinearColor(0.2f, 1.0f, 0.2f, 1.f));
+	}
+	PawnMesh->SetMaterial(0, CarryingMaterial);
+
+	UE_LOG(LogUmbra, Log, TEXT("Pawn: Now carrying a battery"));
+}
+
+void AUmbraPawn::DropBattery()
+{
+	if (!bCarryingBattery)
+	{
+		return;
+	}
+
+	bCarryingBattery = false;
+
+	if (OriginalMaterial)
+	{
+		PawnMesh->SetMaterial(0, OriginalMaterial);
+	}
+
+	UE_LOG(LogUmbra, Log, TEXT("Pawn: Dropped battery"));
 }
