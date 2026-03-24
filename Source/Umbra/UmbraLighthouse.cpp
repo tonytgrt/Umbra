@@ -56,13 +56,19 @@ void AUmbraLighthouse::BeginPlay()
     LighthouseSpotLight->SetAttenuationRadius(AttenuationRadius);
     LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, StartYaw, 0.f));
 
-    // TODO: Remove this debug auto-activation once battery/drop-off is placed
-    Activate();
+    // Capture translation endpoints
+    TranslationStart = GetActorLocation();
+    TranslationEnd = TranslationStart + TranslationOffset;
+    TranslationDirection = 1.f;
+
+    if (bAutoActivate)
+    {
+        Activate();
+    }
 }
 
 void AUmbraLighthouse::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    // Unregister if still active
     if (bIsActivated)
     {
         if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
@@ -83,21 +89,38 @@ void AUmbraLighthouse::Tick(float DeltaSeconds)
         return;
     }
 
-    // Sweep yaw back and forth between StartYaw and EndYaw
-    CurrentYaw += SweepDirection * RotationSpeed * DeltaSeconds;
-
-    if (SweepDirection > 0.f && CurrentYaw >= EndYaw)
+    // --- Rotation: sweep spotlight yaw back and forth ---
+    if (bEnableRotation)
     {
-        CurrentYaw = EndYaw;
-        SweepDirection = -1.f;
-    }
-    else if (SweepDirection < 0.f && CurrentYaw <= StartYaw)
-    {
-        CurrentYaw = StartYaw;
-        SweepDirection = 1.f;
+        CurrentYaw += SweepDirection * RotationSpeed * DeltaSeconds;
+
+        if (SweepDirection > 0.f && CurrentYaw >= EndYaw)
+        {
+            CurrentYaw = EndYaw;
+            SweepDirection = -1.f;
+        }
+        else if (SweepDirection < 0.f && CurrentYaw <= StartYaw)
+        {
+            CurrentYaw = StartYaw;
+            SweepDirection = 1.f;
+        }
+
+        LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, CurrentYaw, 0.f));
     }
 
-    LighthouseSpotLight->SetRelativeRotation(FRotator(SpotPitch, CurrentYaw, 0.f));
+    // --- Translation: move the whole actor back and forth ---
+    if (bEnableTranslation)
+    {
+        const FVector Target = (TranslationDirection > 0.f) ? TranslationEnd : TranslationStart;
+        const FVector NewLocation = FMath::VInterpConstantTo(GetActorLocation(), Target, DeltaSeconds, TranslationSpeed);
+        SetActorLocation(NewLocation);
+
+        if (FVector::DistSquared(NewLocation, Target) < 1.f)
+        {
+            SetActorLocation(Target);
+            TranslationDirection *= -1.f;
+        }
+    }
 }
 
 void AUmbraLighthouse::Activate()
@@ -111,7 +134,6 @@ void AUmbraLighthouse::Activate()
     LighthouseSpotLight->SetIntensity(LightIntensity);
     LighthouseSpotLight->SetVisibility(true);
 
-    // Register with the light subsystem so shadow checks include this light
     if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
     {
         Sub->RegisterLight(LighthouseSpotLight);
