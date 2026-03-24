@@ -31,6 +31,10 @@ protected:
         bool                 bFromSweep,
         const FHitResult& SweepResult);
 
+public:
+    /** Returns the visual mesh component (used by pawn to attach above head). */
+    UStaticMeshComponent* GetBatteryMesh() const { return BatteryMesh; }
+
 private:
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<USphereComponent> PickupSphere;

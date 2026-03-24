@@ -1,6 +1,7 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraPawn.h"
+#include "UmbraBattery.h"
 #include "UmbraLightSubsystem.h"
 #include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
@@ -13,7 +14,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "DrawDebugHelpers.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Umbra.h"
 
 AUmbraPawn::AUmbraPawn()
@@ -68,6 +68,11 @@ AUmbraPawn::AUmbraPawn()
 	MoveComp->bOrientRotationToMovement = false;
 
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
+
+	// Anchor point for the floating battery indicator
+	BatteryAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("BatteryAnchor"));
+	BatteryAnchor->SetupAttachment(GetRootComponent());
+	BatteryAnchor->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
 }
 
 void AUmbraPawn::Tick(float DeltaSeconds)
@@ -100,6 +105,12 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 		RollingRotation = DeltaRotation * RollingRotation;
 		RollingRotation.Normalize();
 		PawnMesh->SetWorldRotation(RollingRotation);
+	}
+
+	// Spin the carried battery above the pawn
+	if (bCarryingBattery && CarriedBattery)
+	{
+		BatteryAnchor->AddLocalRotation(FRotator(0.f, BatterySpinSpeed * DeltaSeconds, 0.f));
 	}
 
 	// Track safe ground before shadow check  -  only when on solid (non-bridge) ground
@@ -350,24 +361,30 @@ void AUmbraPawn::SetAllBridgesEnabled(bool bEnabled)
 	}
 }
 
-void AUmbraPawn::PickUpBattery()
+void AUmbraPawn::PickUpBattery(AUmbraBattery* Battery)
 {
-	if (bCarryingBattery)
+	if (bCarryingBattery || !Battery)
 	{
 		return;
 	}
 
 	bCarryingBattery = true;
+	CarriedBattery = Battery;
 
-	// Change pawn color to indicate carrying
-	OriginalMaterial = PawnMesh->GetMaterial(0);
-	if (!CarryingMaterial)
+	// Disable the battery's collision so it stops triggering overlaps
+	Battery->SetActorEnableCollision(false);
+
+	// Attach the battery actor to our anchor point above the pawn
+	Battery->AttachToComponent(BatteryAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	// Shrink the battery mesh to a small floating indicator
+	if (UStaticMeshComponent* BattMesh = Battery->GetBatteryMesh())
 	{
-		CarryingMaterial = UMaterialInstanceDynamic::Create(OriginalMaterial, this);
-		CarryingMaterial->SetVectorParameterValue(
-			TEXT("BaseColor"), FLinearColor(0.2f, 1.0f, 0.2f, 1.f));
+		BattMesh->SetRelativeScale3D(FVector(0.2f));
 	}
-	PawnMesh->SetMaterial(0, CarryingMaterial);
+
+	// Reset anchor rotation so spinning starts clean
+	BatteryAnchor->SetRelativeRotation(FRotator::ZeroRotator);
 
 	UE_LOG(LogUmbra, Log, TEXT("Pawn: Now carrying a battery"));
 }
@@ -381,9 +398,12 @@ void AUmbraPawn::DropBattery()
 
 	bCarryingBattery = false;
 
-	if (OriginalMaterial)
+	// Destroy the carried battery actor
+	if (CarriedBattery)
 	{
-		PawnMesh->SetMaterial(0, OriginalMaterial);
+		CarriedBattery->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CarriedBattery->Destroy();
+		CarriedBattery = nullptr;
 	}
 
 	UE_LOG(LogUmbra, Log, TEXT("Pawn: Dropped battery"));

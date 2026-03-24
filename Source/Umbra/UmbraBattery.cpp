@@ -61,6 +61,5 @@ void AUmbraBattery::OnOverlapBegin(
 
     UE_LOG(LogUmbra, Log, TEXT("Battery '%s': Picked up by pawn"), *GetName());
 
-    Pawn->PickUpBattery();
-    Destroy();
+    Pawn->PickUpBattery(this);
 }

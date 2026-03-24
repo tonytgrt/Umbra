@@ -9,6 +9,7 @@
 class UStaticMeshComponent;
 class USpringArmComponent;
 class UCameraComponent;
+class AUmbraBattery;
 
 UCLASS()
 class AUmbraPawn : public ACharacter
@@ -26,7 +27,7 @@ public:
 	// --- Battery carrying ---
 
 	/** Called by AUmbraBattery when the player picks one up. */
-	void PickUpBattery();
+	void PickUpBattery(AUmbraBattery* Battery);
 
 	/** Called by AUmbraBatteryDropOff when the player delivers a battery. */
 	void DropBattery();
@@ -100,11 +101,14 @@ private:
 	// --- Battery state ---
 	bool bCarryingBattery = false;
 
-	/** Original material of the pawn mesh, saved before color change. */
+	/** The battery actor currently being carried (attached above pawn). */
 	UPROPERTY()
-	TObjectPtr<UMaterialInterface> OriginalMaterial;
+	TObjectPtr<AUmbraBattery> CarriedBattery;
 
-	/** Material instance used for the "carrying battery" color indicator. */
-	UPROPERTY()
-	TObjectPtr<UMaterialInstanceDynamic> CarryingMaterial;
+	/** Anchor point above the pawn where the battery floats. */
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> BatteryAnchor;
+
+	/** Rotation speed of the floating battery (degrees/sec). */
+	float BatterySpinSpeed = 90.f;
 };
