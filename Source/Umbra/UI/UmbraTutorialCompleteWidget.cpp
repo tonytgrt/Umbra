@@ -1,6 +1,7 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraTutorialCompleteWidget.h"
+#include "UmbraTutorialGameMode.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -16,5 +17,12 @@ void UUmbraTutorialCompleteWidget::NativeConstruct()
 
 void UUmbraTutorialCompleteWidget::OnContinueClicked()
 {
-	UGameplayStatics::OpenLevel(this, FName(TEXT("Level_1")));
+	FName Target = TEXT("Level_1");
+
+	if (AUmbraTutorialGameMode* GM = Cast<AUmbraTutorialGameMode>(UGameplayStatics::GetGameMode(this)))
+	{
+		Target = GM->GetNextLevelName();
+	}
+
+	UGameplayStatics::OpenLevel(this, Target);
 }

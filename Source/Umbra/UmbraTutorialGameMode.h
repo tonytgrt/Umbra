@@ -70,6 +70,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	UUmbraTutorialHUDWidget* GetTutorialHUD() const { return TutorialHUDWidget; }
 
+	/** Get the level to transition to after this tutorial. */
+	FName GetNextLevelName() const { return NextLevelName; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -87,6 +90,10 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UUmbraTutorialCompleteWidget> TutorialCompleteWidget;
+
+	/** Level to open when the tutorial is skipped or completed. */
+	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")
+	FName NextLevelName = TEXT("Level_1");
 
 	/** Ordered list of tutorial steps based on Y position. Configure in BP child. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tutorial")

@@ -90,7 +90,7 @@ void AUmbraTutorialGameMode::Tick(float DeltaSeconds)
 void AUmbraTutorialGameMode::SkipTutorial()
 {
 	UE_LOG(LogUmbra, Log, TEXT("Tutorial skipped"));
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("Level_1")));
+	UGameplayStatics::OpenLevel(GetWorld(), NextLevelName);
 }
 
 void AUmbraTutorialGameMode::OnTutorialCompleted()
