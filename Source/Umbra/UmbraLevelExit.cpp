@@ -4,6 +4,7 @@
 #include "UmbraPuzzleGameMode.h"
 #include "UmbraTutorialGameMode.h"
 #include "Components/BoxComponent.h"
+#include "NiagaraComponent.h"
 
 AUmbraLevelExit::AUmbraLevelExit()
 {
@@ -12,6 +13,10 @@ AUmbraLevelExit::AUmbraLevelExit()
     TriggerBox->SetCollisionProfileName(TEXT("Trigger"));
     TriggerBox->SetGenerateOverlapEvents(true);
     RootComponent = TriggerBox;
+
+    PortalEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PortalEffect"));
+    PortalEffect->SetupAttachment(TriggerBox);
+    PortalEffect->SetAutoActivate(true);
 }
 
 void AUmbraLevelExit::OnOverlapBegin(

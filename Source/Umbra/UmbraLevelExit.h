@@ -6,6 +6,7 @@
 #include "UmbraLevelExit.generated.h"
 
 class UBoxComponent;
+class UNiagaraComponent;
 
 UCLASS()
 class AUmbraLevelExit : public AActor
@@ -18,6 +19,10 @@ public:
 private:
     UPROPERTY(VisibleAnywhere)
     TObjectPtr<UBoxComponent> TriggerBox;
+
+    /** Niagara particle effect for the exit portal visual. Assign the system asset in editor/BP. */
+    UPROPERTY(VisibleAnywhere, Category = "Umbra|Exit")
+    TObjectPtr<UNiagaraComponent> PortalEffect;
 
     virtual void BeginPlay() override;
 

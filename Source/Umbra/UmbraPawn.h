@@ -61,8 +61,8 @@ private:
 	float IntroCamElapsed = 0.f;
 	FVector IntroCamLocation;
 	FRotator IntroCamRotation;
-	float IntroCamHoldDuration = 1.0f;
-	float IntroCamTransitionDuration = 1.5f;
+	float IntroCamHoldDuration = 3.0f;
+	float IntroCamTransitionDuration = 2.0f;
 
 	/** The camera's normal world transform (updated each frame during intro). */
 	FVector GameplayCamLocation;
