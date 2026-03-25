@@ -2,7 +2,9 @@
 
 #include "UmbraPawn.h"
 #include "UmbraBattery.h"
+#include "UmbraIntroCam.h"
 #include "UmbraLightSubsystem.h"
+#include "EngineUtils.h"
 #include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -75,9 +77,50 @@ AUmbraPawn::AUmbraPawn()
 	BatteryAnchor->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
 }
 
+void AUmbraPawn::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Look for an intro camera anchor placed in this level
+	AUmbraIntroCam* IntroCamActor = nullptr;
+	for (TActorIterator<AUmbraIntroCam> It(GetWorld()); It; ++It)
+	{
+		IntroCamActor = *It;
+		break;
+	}
+
+	if (IntroCamActor)
+	{
+		IntroCamLocation = IntroCamActor->GetActorLocation();
+		IntroCamRotation = IntroCamActor->GetActorRotation();
+		IntroCamHoldDuration = IntroCamActor->HoldDuration;
+		IntroCamTransitionDuration = IntroCamActor->TransitionDuration;
+
+		// Detach camera from spring arm so we can position it freely
+		TopDownCamera->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+		// Capture where the camera would normally be
+		GameplayCamLocation = CameraBoom->GetComponentLocation()
+			+ CameraBoom->GetForwardVector() * CameraBoom->TargetArmLength;
+		GameplayCamRotation = CameraBoom->GetComponentRotation();
+
+		// Move camera to the overview position
+		TopDownCamera->SetWorldLocation(IntroCamLocation);
+		TopDownCamera->SetWorldRotation(IntroCamRotation);
+
+		bIntroCamActive = true;
+		IntroCamElapsed = 0.f;
+	}
+}
+
 void AUmbraPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (bIntroCamActive)
+	{
+		TickIntroCam(DeltaSeconds);
+	}
 
 	if (bIsRespawning)
 	{
@@ -126,6 +169,41 @@ void AUmbraPawn::Tick(float DeltaSeconds)
 void AUmbraPawn::SetMoveInput(FVector2D Input)
 {
 	CurrentMoveInput = Input;
+}
+
+void AUmbraPawn::TickIntroCam(float DeltaSeconds)
+{
+	IntroCamElapsed += DeltaSeconds;
+
+	// Get where the camera *should* be via the spring arm socket
+	GameplayCamLocation = CameraBoom->GetSocketLocation(USpringArmComponent::SocketName);
+	GameplayCamRotation = CameraBoom->GetSocketRotation(USpringArmComponent::SocketName);
+
+	if (IntroCamElapsed <= IntroCamHoldDuration)
+	{
+		// Phase 1: hold at overview position
+		TopDownCamera->SetWorldLocation(IntroCamLocation);
+		TopDownCamera->SetWorldRotation(IntroCamRotation);
+	}
+	else if (IntroCamElapsed <= IntroCamHoldDuration + IntroCamTransitionDuration)
+	{
+		// Phase 2: smoothly interpolate to gameplay position
+		const float Alpha = FMath::Clamp(
+			(IntroCamElapsed - IntroCamHoldDuration) / IntroCamTransitionDuration, 0.f, 1.f);
+		const float Smooth = FMath::InterpEaseInOut(0.f, 1.f, Alpha, 2.f);
+
+		const FVector NewLoc = FMath::Lerp(IntroCamLocation, GameplayCamLocation, Smooth);
+		const FQuat NewRot = FQuat::Slerp(IntroCamRotation.Quaternion(), GameplayCamRotation.Quaternion(), Smooth);
+
+		TopDownCamera->SetWorldLocation(NewLoc);
+		TopDownCamera->SetWorldRotation(NewRot.Rotator());
+	}
+	else
+	{
+		// Done — reattach camera to spring arm
+		TopDownCamera->AttachToComponent(CameraBoom, FAttachmentTransformRules::SnapToTargetNotIncludingScale, USpringArmComponent::SocketName);
+		bIntroCamActive = false;
+	}
 }
 
 void AUmbraPawn::PerformShadowCheck()

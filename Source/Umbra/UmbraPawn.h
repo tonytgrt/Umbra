@@ -49,8 +49,24 @@ protected:
 
 private:
 
+	virtual void BeginPlay() override;
+
 	/** Cached input from controller */
 	FVector2D CurrentMoveInput;
+
+	// --- Level intro camera ---
+	void TickIntroCam(float DeltaSeconds);
+
+	bool bIntroCamActive = false;
+	float IntroCamElapsed = 0.f;
+	FVector IntroCamLocation;
+	FRotator IntroCamRotation;
+	float IntroCamHoldDuration = 1.0f;
+	float IntroCamTransitionDuration = 1.5f;
+
+	/** The camera's normal world transform (updated each frame during intro). */
+	FVector GameplayCamLocation;
+	FRotator GameplayCamRotation;
 
 	// --- Shadow check (Phase 1) ---
 	void PerformShadowCheck();
