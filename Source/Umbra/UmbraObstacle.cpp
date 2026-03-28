@@ -14,21 +14,23 @@ AUmbraObstacle::AUmbraObstacle()
 
 	// Collision box (root)
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
-	CollisionBox->SetBoxExtent(FVector(50.f, 50.f, 100.f));
+	CollisionBox->SetBoxExtent(FVector(40.f, 60.f, 100.f));
 	CollisionBox->SetCollisionProfileName(TEXT("BlockAll"));
 	SetRootComponent(CollisionBox);
 
 	// Visual mesh (offset upward so collision box sits lower relative to the mesh)
 	ObstacleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ObstacleMesh"));
 	ObstacleMesh->SetupAttachment(CollisionBox);
-	ObstacleMesh->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
+	ObstacleMesh->SetRelativeLocation(FVector(0.f, 0.f, -100.f));
+	ObstacleMesh->SetRelativeRotation(FRotator(0.f, 90.f, 0.f));
+	ObstacleMesh->SetRelativeScale3D(FVector(3.f));
 	ObstacleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> PillarMesh(
-		TEXT("/Game/FloatingIslandPack/Meshes/Pillars/SM_Pillar_01.SM_Pillar_01"));
-	if (PillarMesh.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SunflowerMeshAsset(
+		TEXT("/Game/Sunflower/Sunflower.Sunflower"));
+	if (SunflowerMeshAsset.Succeeded())
 	{
-		ObstacleMesh->SetStaticMesh(PillarMesh.Object);
+		ObstacleMesh->SetStaticMesh(SunflowerMeshAsset.Object);
 	}
 
 	bCurrentlyActive = true;
@@ -76,7 +78,7 @@ bool AUmbraObstacle::IsLit() const
 	TArray<AActor*> Lanterns;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AUmbraLantern::StaticClass(), Lanterns);
 
-	const FVector MyLocation = OriginalLocation + FVector(0.f, 0.f, 50.f);
+	const FVector MyLocation = OriginalLocation;
 
 	bool bInAnyLightRange = false;
 
@@ -112,6 +114,15 @@ bool AUmbraObstacle::IsLit() const
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(Lantern);
 		Params.AddIgnoredActor(this);
+		Params.bIgnoreBlocks = false;
+
+		// Ignore all child actors attached to this obstacle
+		TArray<AActor*> ChildActors;
+		GetAttachedActors(ChildActors);
+		for (AActor* Child : ChildActors)
+		{
+			Params.AddIgnoredActor(Child);
+		}
 
 		const bool bBlocked = GetWorld()->LineTraceSingleByChannel(
 			Hit,
