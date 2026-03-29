@@ -52,7 +52,18 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Umbra|ShadowBridge", meta = (ClampMin = "10"))
 	float SampleSpacing = 30.f;
 
-	/** World-space positions that are in shadow, rebuilt each tick. */
+	/** How far below the bridge surface to trace for solid ground (UU). */
+	UPROPERTY(EditAnywhere, Category = "Umbra|ShadowBridge", meta = (ClampMin = "50"))
+	float GroundTraceDepth = 500.f;
+
+	/** How many frames to skip between shadow resamples. */
+	UPROPERTY(EditAnywhere, Category = "Umbra|ShadowBridge", meta = (ClampMin = "1"))
+	int32 SampleInterval = 5;
+
+	/** Frame counter for throttled sampling. */
+	int32 FrameCounter = 0;
+
+	/** World-space positions that are in shadow over void. */
 	TArray<FVector> CachedShadowPositions;
 
 	/** Interpolate activation and push Niagara user parameters. */

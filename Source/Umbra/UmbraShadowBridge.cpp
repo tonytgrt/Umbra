@@ -66,13 +66,13 @@ void AUmbraShadowBridge::UpdateEffectParameters(float DeltaSeconds)
 
 	BridgeEffect->SetFloatParameter(TEXT("Activation"), ActivationAlpha);
 
-	// Activate/deactivate the system based on whether there is any visual to show
-	const bool bShouldBeActive = ActivationAlpha > KINDA_SMALL_NUMBER;
-	if (bShouldBeActive && !BridgeEffect->IsActive())
+	// Activate/deactivate based on whether there are shadow positions to render
+	const bool bHasPositions = CachedShadowPositions.Num() > 0;
+	if (bHasPositions && !BridgeEffect->IsActive())
 	{
 		BridgeEffect->Activate();
 	}
-	else if (!bShouldBeActive && BridgeEffect->IsActive())
+	else if (!bHasPositions && BridgeEffect->IsActive())
 	{
 		BridgeEffect->Deactivate();
 	}
@@ -108,7 +108,10 @@ void AUmbraShadowBridge::SampleShadowPositions()
 			FVector LocalOffset(-ScaledExtent.X + Xi * StepX, -ScaledExtent.Y + Yi * StepY, ScaledExtent.Z + 1.f);
 			FVector WorldPos = BoxCenter + BoxRot.RotateVector(LocalOffset);
 
-			bool bPointInShadow = true;
+			// Match the pawn's shadow logic: a point is in shadow if ANY
+			// in-range light is blocked (same as UmbraPawn::PerformShadowCheck).
+			bool bPointInShadow = false;
+			bool bAnyLightInRange = false;
 
 			for (const TWeakObjectPtr<ULightComponent>& LightPtr : Lights)
 			{
@@ -147,36 +150,49 @@ void AUmbraShadowBridge::SampleShadowPositions()
 					}
 				}
 
+				bAnyLightInRange = true;
+
 				FCollisionQueryParams LightParams = QueryParams;
 				LightParams.AddIgnoredActor(Light->GetOwner());
 
 				FHitResult Hit;
-				if (!GetWorld()->LineTraceSingleByChannel(Hit, WorldPos, LightLoc, ECC_Visibility, LightParams))
+				if (GetWorld()->LineTraceSingleByChannel(Hit, WorldPos, LightLoc, ECC_Visibility, LightParams))
 				{
-					// Unobstructed path to this light — point is lit
-					bPointInShadow = false;
+					// Blocked path to this light — point is in shadow
+					bPointInShadow = true;
 					break;
 				}
 			}
 
-			if (bPointInShadow)
+			if (bPointInShadow && bAnyLightInRange)
 			{
-				CachedShadowPositions.Add(WorldPos);
+				// Only keep points over void (no solid ground below)
+				FHitResult GroundHit;
+				const FVector TraceEnd = WorldPos - FVector(0.f, 0.f, GroundTraceDepth);
+				if (!GetWorld()->LineTraceSingleByChannel(GroundHit, WorldPos, TraceEnd, ECC_Visibility, QueryParams))
+				{
+					CachedShadowPositions.Add(WorldPos);
+				}
 			}
 		}
 	}
-}
+}LogNiagara: Warning: NiagaraEmitter /Game/NS_ShadowBridge.NS_ShadowBridge:CompletelyEmpty has attempted to exceed the max CPU particle count! | Max: 1000000 | Requested: 1000309
 
 void AUmbraShadowBridge::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
 	UpdateEffectParameters(DeltaSeconds);
-	SampleShadowPositions();
 
-	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
-		BridgeEffect, FName("ShadowPositions"), CachedShadowPositions);
-	UE_LOG(LogTemp, Warning, TEXT("ShadowBridge: %d shadow positions"), CachedShadowPositions.Num());
+	// Throttle shadow sampling to every SampleInterval frames
+	if (++FrameCounter >= SampleInterval)
+	{
+		FrameCounter = 0;
+		SampleShadowPositions();
+
+		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
+			BridgeEffect, FName("ShadowPositions"), CachedShadowPositions);
+	}
 }
 
 void AUmbraShadowBridge::EnableBridge()
