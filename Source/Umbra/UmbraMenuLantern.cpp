@@ -28,6 +28,10 @@ void AUmbraMenuLantern::Tick(float DeltaSeconds)
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
     if (!PC) return;
 
+    // Tint light yellow while mouse is pressed
+    const bool bPressed = PC->IsInputKeyDown(EKeys::LeftMouseButton);
+    LanternLight->SetLightColor(bPressed ? FLinearColor(1.f, 0.85f, 0.3f) : FLinearColor::White);
+
     // Project mouse screen position onto a vertical plane (Y = FixedY)
     // so that mouse up/down maps to Z axis movement
     FVector WorldPos, WorldDir;
