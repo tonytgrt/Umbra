@@ -3,6 +3,8 @@
 #include "UmbraMainMenuGameMode.h"
 #include "UmbraMainMenuWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "Camera/CameraActor.h"
+#include "Kismet/GameplayStatics.h"
 
 AUmbraMainMenuGameMode::AUmbraMainMenuGameMode()
 {
@@ -24,13 +26,28 @@ void AUmbraMainMenuGameMode::BeginPlay()
             {
                 MainMenuWidget->AddToViewport();
 
-                // Show mouse cursor and set UI-only input mode
-                PC->bShowMouseCursor = true;
-                FInputModeUIOnly InputMode;
+                // Hide hardware cursor — the lantern replaces it
+                PC->bShowMouseCursor = false;
+
+                // GameAndUI so mouse position updates for the lantern
+                // while still allowing button clicks
+                FInputModeGameAndUI InputMode;
                 InputMode.SetWidgetToFocus(MainMenuWidget->TakeWidget());
-                InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+                InputMode.SetHideCursorDuringCapture(false);
                 PC->SetInputMode(InputMode);
             }
+        }
+    }
+
+    // Set the view to the CameraActor placed in the level
+    APlayerController* CamPC = GetWorld()->GetFirstPlayerController();
+    if (CamPC)
+    {
+        TArray<AActor*> Cameras;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraActor::StaticClass(), Cameras);
+        if (Cameras.Num() > 0)
+        {
+            CamPC->SetViewTargetWithBlend(Cameras[0], 0.f);
         }
     }
 }
