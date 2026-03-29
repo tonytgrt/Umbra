@@ -4,7 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "UmbraMenuLantern.generated.h"
 
-class UPointLightComponent;
+class USpotLightComponent;
 class UStaticMeshComponent;
 
 UCLASS()
@@ -21,7 +21,7 @@ private:
     TObjectPtr<UStaticMeshComponent> LanternMesh;
 
     UPROPERTY(VisibleAnywhere)
-    TObjectPtr<UPointLightComponent> LanternLight;
+    TObjectPtr<USpotLightComponent> LanternLight;
 
     /** Fixed Y depth the lantern sits at (the vertical plane it moves on). */
     UPROPERTY(EditAnywhere, Category = "Menu Lantern")

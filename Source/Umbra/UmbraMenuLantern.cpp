@@ -1,5 +1,5 @@
 #include "UmbraMenuLantern.h"
-#include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
@@ -13,12 +13,16 @@ AUmbraMenuLantern::AUmbraMenuLantern()
     LanternMesh->SetCastShadow(false);
     SetRootComponent(LanternMesh);
 
-    LanternLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("LanternLight"));
+    LanternLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("LanternLight"));
     LanternLight->SetupAttachment(LanternMesh);
-    LanternLight->SetIntensity(5000.f);
-    LanternLight->SetAttenuationRadius(800.f);
+    LanternLight->SetIntensity(100000.f);
+    LanternLight->SetAttenuationRadius(2000.f);
+    LanternLight->SetInnerConeAngle(22.f);
+    LanternLight->SetOuterConeAngle(30.f);
     LanternLight->CastShadows = true;
     LanternLight->SetRelativeLocation(FVector(0.f, 0.f, 30.f));
+    // Point the spotlight forward (toward the letters, along -Y)
+    LanternLight->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 }
 
 void AUmbraMenuLantern::Tick(float DeltaSeconds)
