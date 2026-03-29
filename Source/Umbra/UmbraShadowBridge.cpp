@@ -176,7 +176,7 @@ void AUmbraShadowBridge::SampleShadowPositions()
 			}
 		}
 	}
-}LogNiagara: Warning: NiagaraEmitter /Game/NS_ShadowBridge.NS_ShadowBridge:CompletelyEmpty has attempted to exceed the max CPU particle count! | Max: 1000000 | Requested: 1000309
+}
 
 void AUmbraShadowBridge::Tick(float DeltaSeconds)
 {
