@@ -6,6 +6,7 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class USoundBase;
 
 /**
  *  Pickup item. Player walks over it to pick it up.
@@ -49,4 +50,8 @@ private:
 
     bool bSpinning = false;
     float SpinSpeed = 90.f;
+
+    /** Sound played when the battery is collected. */
+    UPROPERTY(EditAnywhere, Category = "Umbra|Audio")
+    TObjectPtr<USoundBase> CollectSound;
 };

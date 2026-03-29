@@ -7,6 +7,7 @@
 class UBoxComponent;
 class UStaticMeshComponent;
 class AUmbraLighthouse;
+class USoundBase;
 
 /**
  *  Designated zone where the player drops off a battery to activate a lighthouse.
@@ -45,4 +46,8 @@ private:
 
     /** Has a battery already been delivered here? */
     bool bHasReceived = false;
+
+    /** Sound played when a battery is dropped off. */
+    UPROPERTY(EditAnywhere, Category = "Umbra|Audio")
+    TObjectPtr<USoundBase> DropSound;
 };

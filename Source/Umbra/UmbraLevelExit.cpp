@@ -5,6 +5,9 @@
 #include "UmbraTutorialGameMode.h"
 #include "Components/BoxComponent.h"
 #include "NiagaraComponent.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
 
 AUmbraLevelExit::AUmbraLevelExit()
 {
@@ -17,6 +20,14 @@ AUmbraLevelExit::AUmbraLevelExit()
     PortalEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PortalEffect"));
     PortalEffect->SetupAttachment(TriggerBox);
     PortalEffect->SetAutoActivate(true);
+
+    // Load win sound
+    static ConstructorHelpers::FObjectFinder<USoundBase> WinSoundAsset(
+        TEXT("/Game/Audio/win.win"));
+    if (WinSoundAsset.Succeeded())
+    {
+        WinSound = WinSoundAsset.Object;
+    }
 }
 
 void AUmbraLevelExit::OnOverlapBegin(
@@ -29,6 +40,10 @@ void AUmbraLevelExit::OnOverlapBegin(
 {
     if (Cast<AUmbraPawn>(OtherActor))
     {
+        if (WinSound)
+        {
+            UGameplayStatics::PlaySound2D(this, WinSound);
+        }
         if (AUmbraPuzzleGameMode* GM = GetWorld()->GetAuthGameMode<AUmbraPuzzleGameMode>())
         {
             GM->OnLevelCleared();

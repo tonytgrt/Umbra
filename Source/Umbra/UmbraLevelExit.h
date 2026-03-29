@@ -7,6 +7,7 @@
 
 class UBoxComponent;
 class UNiagaraComponent;
+class USoundBase;
 
 UCLASS()
 class AUmbraLevelExit : public AActor
@@ -23,6 +24,10 @@ private:
     /** Niagara particle effect for the exit portal visual. Assign the system asset in editor/BP. */
     UPROPERTY(VisibleAnywhere, Category = "Umbra|Exit")
     TObjectPtr<UNiagaraComponent> PortalEffect;
+
+    /** Sound played when the orb reaches the exit. */
+    UPROPERTY(EditAnywhere, Category = "Umbra|Audio")
+    TObjectPtr<USoundBase> WinSound;
 
     virtual void BeginPlay() override;
 

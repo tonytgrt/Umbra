@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUmbraObstacle::AUmbraObstacle()
@@ -33,9 +34,19 @@ AUmbraObstacle::AUmbraObstacle()
 		ObstacleMesh->SetStaticMesh(SunflowerMeshAsset.Object);
 	}
 
+	// Load grow/sink sound (same asset for both)
+	static ConstructorHelpers::FObjectFinder<USoundBase> SunflowerGrowSoundAsset(
+		TEXT("/Game/Audio/sunflower_grow.sunflower_grow"));
+	if (SunflowerGrowSoundAsset.Succeeded())
+	{
+		GrowSound = SunflowerGrowSoundAsset.Object;
+		SinkSound = SunflowerGrowSoundAsset.Object;
+	}
+
 	bCurrentlyActive = true;
 	TargetZOffset = 0.f;
 	CurrentZOffset = 0.f;
+	PreviousTargetZOffset = 0.f;
 }
 
 void AUmbraObstacle::BeginPlay()
@@ -48,6 +59,7 @@ void AUmbraObstacle::BeginPlay()
 	const bool bLit = IsLit();
 	TargetZOffset = bLit ? 0.f : -SinkDepth;
 	CurrentZOffset = TargetZOffset;
+	PreviousTargetZOffset = TargetZOffset;
 	SetActorLocation(OriginalLocation + FVector(0.f, 0.f, CurrentZOffset));
 	SetObstacleActive(bLit);
 }
@@ -58,6 +70,17 @@ void AUmbraObstacle::Tick(float DeltaTime)
 
 	const bool bShouldBeActive = IsLit();
 	TargetZOffset = bShouldBeActive ? 0.f : -SinkDepth;
+
+	// Play sound when direction changes
+	if (TargetZOffset != PreviousTargetZOffset)
+	{
+		USoundBase* SoundToPlay = (TargetZOffset > PreviousTargetZOffset) ? GrowSound : SinkSound;
+		if (SoundToPlay)
+		{
+			UGameplayStatics::SpawnSound2D(this, SoundToPlay, 1.f, 1.f, 4.0f);
+		}
+		PreviousTargetZOffset = TargetZOffset;
+	}
 
 	// Smoothly move toward target
 	if (!FMath::IsNearlyEqual(CurrentZOffset, TargetZOffset, 1.f))

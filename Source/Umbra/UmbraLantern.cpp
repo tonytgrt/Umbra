@@ -5,6 +5,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUmbraLantern::AUmbraLantern()
@@ -54,6 +56,14 @@ AUmbraLantern::AUmbraLantern()
 	{
 		BoundsPlane->SetStaticMesh(PlaneFinder.Object);
 	}
+
+	// Load lantern sound
+	static ConstructorHelpers::FObjectFinder<USoundBase> LanternSoundAsset(
+		TEXT("/Game/Audio/lantern.lantern"));
+	if (LanternSoundAsset.Succeeded())
+	{
+		LanternSound = LanternSoundAsset.Object;
+	}
 }
 
 void AUmbraLantern::BeginPlay()
@@ -78,6 +88,11 @@ void AUmbraLantern::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AUmbraLantern::OnDragStart_Implementation(FVector WorldPos)
 {
+	if (LanternSound)
+	{
+		UGameplayStatics::SpawnSound2D(this, LanternSound, 1.f, 1.f, 0.35f);
+	}
+
 	LockedZ = GetActorLocation().Z;
 
 	// Show bounds plane while dragging
@@ -108,6 +123,11 @@ void AUmbraLantern::OnDragUpdate_Implementation(FVector WorldPos)
 
 void AUmbraLantern::OnDragEnd_Implementation()
 {
+	if (LanternSound)
+	{
+		UGameplayStatics::SpawnSound2D(this, LanternSound, 1.f, 1.f, 0.35f);
+	}
+
 	// Hide bounds plane when drag ends
 	if (BoundsPlane)
 	{

@@ -10,6 +10,7 @@
 class UStaticMeshComponent;
 class UPointLightComponent;
 class USphereComponent;
+class USoundBase;
 
 /**
  *  Draggable point light source for Umbra puzzles.
@@ -67,4 +68,8 @@ private:
 
 	/** Update the bounds plane position and scale to match BoundsMin/BoundsMax */
 	void UpdateBoundsPlane();
+
+	/** Sound played when picking up or dropping the lantern. */
+	UPROPERTY(EditAnywhere, Category = "Umbra|Audio")
+	TObjectPtr<USoundBase> LanternSound;
 };
