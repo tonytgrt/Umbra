@@ -228,6 +228,15 @@ void AUmbraPawn::PerformShadowCheck()
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
+	// Exclude actors tagged "NoShadow" from shadow traces
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(TEXT("NoShadow")))
+		{
+			QueryParams.AddIgnoredActor(*It);
+		}
+	}
+
 	bool bAnyBlocked = false;
 
 	for (const TWeakObjectPtr<ULightComponent>& LightPtr : Lights)

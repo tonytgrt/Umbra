@@ -9,6 +9,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "EngineUtils.h"
 
 AUmbraShadowBridge::AUmbraShadowBridge()
 {
@@ -100,6 +101,15 @@ void AUmbraShadowBridge::SampleShadowPositions()
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
+
+	// Exclude actors tagged "NoShadow" from shadow traces
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(TEXT("NoShadow")))
+		{
+			QueryParams.AddIgnoredActor(*It);
+		}
+	}
 
 	for (int32 Xi = 0; Xi <= GridCountX; ++Xi)
 	{
