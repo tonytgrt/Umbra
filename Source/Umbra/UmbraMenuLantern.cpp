@@ -1,4 +1,5 @@
 #include "UmbraMenuLantern.h"
+#include "UmbraLightSubsystem.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -23,6 +24,26 @@ AUmbraMenuLantern::AUmbraMenuLantern()
     LanternLight->SetRelativeLocation(FVector(0.f, 0.f, 30.f));
     // Point the spotlight forward (toward the letters, along -Y)
     LanternLight->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+}
+
+void AUmbraMenuLantern::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
+    {
+        Sub->RegisterLight(LanternLight);
+    }
+}
+
+void AUmbraMenuLantern::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (UUmbraLightSubsystem* Sub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>())
+    {
+        Sub->UnregisterLight(LanternLight);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void AUmbraMenuLantern::Tick(float DeltaSeconds)

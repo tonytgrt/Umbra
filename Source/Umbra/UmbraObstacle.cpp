@@ -1,10 +1,12 @@
 // Umbra - Light & Shadow Puzzle Game
 
 #include "UmbraObstacle.h"
-#include "UmbraLantern.h"
+#include "UmbraLightSubsystem.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
@@ -98,23 +100,18 @@ void AUmbraObstacle::Tick(float DeltaTime)
 
 bool AUmbraObstacle::IsLit() const
 {
-	TArray<AActor*> Lanterns;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AUmbraLantern::StaticClass(), Lanterns);
+	UUmbraLightSubsystem* LightSub = GetWorld()->GetSubsystem<UUmbraLightSubsystem>();
+	if (!LightSub)
+	{
+		return true;
+	}
 
 	const FVector MyLocation = OriginalLocation;
-
 	bool bInAnyLightRange = false;
 
-	for (AActor* Actor : Lanterns)
+	for (const TWeakObjectPtr<ULightComponent>& WeakLight : LightSub->GetLights())
 	{
-		AUmbraLantern* Lantern = Cast<AUmbraLantern>(Actor);
-		if (!Lantern)
-		{
-			continue;
-		}
-
-		// Find the PointLightComponent on the lantern
-		UPointLightComponent* Light = Lantern->FindComponentByClass<UPointLightComponent>();
+		ULightComponent* Light = WeakLight.Get();
 		if (!Light)
 		{
 			continue;
@@ -123,23 +120,42 @@ bool AUmbraObstacle::IsLit() const
 		const FVector LightLocation = Light->GetComponentLocation();
 		const float Distance = FVector::Dist(LightLocation, MyLocation);
 
-		// Skip if outside the light's attenuation radius
-		if (Distance > Light->AttenuationRadius)
+		// Resolve attenuation radius from concrete light type
+		float Attenuation = 0.f;
+		if (const UPointLightComponent* Point = Cast<UPointLightComponent>(Light))
+		{
+			Attenuation = Point->AttenuationRadius;
+		}
+		else if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
+		{
+			Attenuation = Spot->AttenuationRadius;
+		}
+
+		if (Distance > Attenuation)
 		{
 			continue;
 		}
 
-		// This obstacle is within at least one light's range
+		// Spotlight cone check
+		if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
+		{
+			const FVector LightForward = Spot->GetForwardVector();
+			const FVector LightToPoint = (MyLocation - LightLocation).GetSafeNormal();
+			const float ConeHalfAngleRad = FMath::DegreesToRadians(Spot->OuterConeAngle);
+			if (FVector::DotProduct(LightForward, LightToPoint) < FMath::Cos(ConeHalfAngleRad))
+			{
+				continue;
+			}
+		}
+
 		bInAnyLightRange = true;
 
-		// Line trace to check for obstructions between the light and this obstacle
+		// Line trace to check for obstructions
 		FHitResult Hit;
 		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(Lantern);
+		Params.AddIgnoredActor(Light->GetOwner());
 		Params.AddIgnoredActor(this);
-		Params.bIgnoreBlocks = false;
 
-		// Ignore all child actors attached to this obstacle
 		TArray<AActor*> ChildActors;
 		GetAttachedActors(ChildActors);
 		for (AActor* Child : ChildActors)
@@ -155,20 +171,19 @@ bool AUmbraObstacle::IsLit() const
 			Params
 		);
 
-		// If the trace didn't hit anything, the light reaches us
 		if (!bBlocked)
 		{
 			return true;
 		}
 	}
 
-	// If not in any light's range, stay visible (only disappear when in shadow)
+	// If not in any light's range, stay visible
 	if (!bInAnyLightRange)
 	{
 		return true;
 	}
 
-	// In range of light(s) but all are blocked — in shadow
+	// In range but all blocked — in shadow
 	return false;
 }
 

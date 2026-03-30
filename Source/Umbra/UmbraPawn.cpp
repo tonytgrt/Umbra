@@ -32,11 +32,11 @@ AUmbraPawn::AUmbraPawn()
 	PawnMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PawnMesh->SetCastShadow(false);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Game/Orb/SM_Orb.SM_Orb"));
 	if (SphereMesh.Succeeded())
 	{
 		PawnMesh->SetStaticMesh(SphereMesh.Object);
-		PawnMesh->SetRelativeScale3D(FVector(0.6f));
+		PawnMesh->SetRelativeScale3D(FVector(0.4f));
 	}
 
 	// Angled camera
