@@ -3,6 +3,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Umbra.h"
 
 AUmbraBattery::AUmbraBattery()
@@ -29,6 +31,14 @@ AUmbraBattery::AUmbraBattery()
     {
         BatteryMesh->SetStaticMesh(MeshFinder.Object);
         BatteryMesh->SetRelativeScale3D(FVector(0.3f, 0.3f, 0.3f));
+    }
+
+    // Load collect sound
+    static ConstructorHelpers::FObjectFinder<USoundBase> CollectSoundAsset(
+        TEXT("/Game/Audio/battery_collect.battery_collect"));
+    if (CollectSoundAsset.Succeeded())
+    {
+        CollectSound = CollectSoundAsset.Object;
     }
 }
 
@@ -71,6 +81,11 @@ void AUmbraBattery::OnOverlapBegin(
     }
 
     UE_LOG(LogUmbra, Log, TEXT("Battery '%s': Picked up by pawn"), *GetName());
+
+    if (CollectSound)
+    {
+        UGameplayStatics::PlaySound2D(this, CollectSound);
+    }
 
     Pawn->PickUpBattery(this);
 }

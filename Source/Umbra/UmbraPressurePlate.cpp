@@ -6,13 +6,15 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Umbra.h"
 
 AUmbraPressurePlate::AUmbraPressurePlate()
 {
-	PrimaryActorTick.bCanEverTick = false; // no tick needed ¡ª event-driven
+	PrimaryActorTick.bCanEverTick = false; // no tick needed ï¿½ï¿½ event-driven
 
-	// ©¤©¤ Trigger volume ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Trigger volume ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//
 	// This is the invisible collision box that detects the pawn.
 	// It uses the OverlapAllDynamic profile, which means:
@@ -26,9 +28,9 @@ AUmbraPressurePlate::AUmbraPressurePlate()
 	TriggerBox->SetGenerateOverlapEvents(true);
 	SetRootComponent(TriggerBox);
 
-	// ©¤©¤ Visual mesh ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Visual mesh ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	//
-	// Purely visual ¡ª no collision. Attached to the trigger box so it
+	// Purely visual ï¿½ï¿½ no collision. Attached to the trigger box so it
 	// moves with it if you reposition the actor.
 
 	PlateMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlateMesh"));
@@ -45,19 +47,27 @@ AUmbraPressurePlate::AUmbraPressurePlate()
 		// Scale X=1.2, Y=1.2 matches 120 UU footprint; Z=0.04 makes it very flat
 		PlateMesh->SetRelativeScale3D(FVector(1.2f, 1.2f, 0.04f));
 	}
+
+	// Load pressure plate sound
+	static ConstructorHelpers::FObjectFinder<USoundBase> PressurePlateSoundAsset(
+		TEXT("/Game/Audio/pressure_plate.pressure_plate"));
+	if (PressurePlateSoundAsset.Succeeded())
+	{
+		PressurePlateSound = PressurePlateSoundAsset.Object;
+	}
 }
 
 void AUmbraPressurePlate::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ©¤©¤ Bind overlap events ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Bind overlap events ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(
 		this, &AUmbraPressurePlate::OnTriggerBeginOverlap);
 	TriggerBox->OnComponentEndOverlap.AddDynamic(
 		this, &AUmbraPressurePlate::OnTriggerEndOverlap);
 
-	// ©¤©¤ Validate designer setup ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Validate designer setup ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	if (LinkedPillars.Num() == 0)
 	{
 		UE_LOG(LogUmbra, Warning,
@@ -75,7 +85,7 @@ void AUmbraPressurePlate::OnTriggerBeginOverlap(
 	bool                 bFromSweep,
 	const FHitResult& SweepResult)
 {
-	// ©¤©¤ Only respond to the player pawn ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Only respond to the player pawn ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	// Cast to AUmbraPawn so that other actors (e.g. the pillar sliding
 	// through) don't accidentally trigger the plate.
 
@@ -110,7 +120,7 @@ void AUmbraPressurePlate::OnTriggerEndOverlap(
 
 void AUmbraPressurePlate::ActivatePlate()
 {
-	// ©¤©¤ OneShot: already fired? ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ OneShot: already fired? ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	if (PlateMode == EPressurePlateMode::OneShot && bHasFired)
 	{
 		return;
@@ -118,7 +128,13 @@ void AUmbraPressurePlate::ActivatePlate()
 
 	bHasFired = true;
 
-	// ©¤©¤ Tell each linked pillar to move ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// Play activation sound
+	if (PressurePlateSound)
+	{
+		UGameplayStatics::PlaySound2D(this, PressurePlateSound);
+	}
+
+	// ï¿½ï¿½ï¿½ï¿½ Tell each linked pillar to move ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	for (AUmbraPillar* Pillar : LinkedPillars)
 	{
 		if (!Pillar)

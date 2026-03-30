@@ -8,6 +8,7 @@
 
 class UStaticMeshComponent;
 class UBoxComponent;
+class USoundBase;
 
 /**
  *  Obstacle that exists when lit and disappears when in shadow.
@@ -60,4 +61,15 @@ private:
 
 	/** Current Z offset from original location. */
 	float CurrentZOffset;
+
+	/** Sound played when the obstacle starts rising (grows). */
+	UPROPERTY(EditAnywhere, Category = "Obstacle|Audio")
+	TObjectPtr<USoundBase> GrowSound;
+
+	/** Sound played when the obstacle starts sinking (goes down). */
+	UPROPERTY(EditAnywhere, Category = "Obstacle|Audio")
+	TObjectPtr<USoundBase> SinkSound;
+
+	/** Track previous target to detect direction changes. */
+	float PreviousTargetZOffset;
 };

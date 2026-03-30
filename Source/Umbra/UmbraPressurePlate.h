@@ -9,6 +9,7 @@
 class AUmbraPillar;
 class UBoxComponent;
 class UStaticMeshComponent;
+class USoundBase;
 
 /**
  * How the plate behaves when the player steps on it.
@@ -29,7 +30,7 @@ enum class EPressurePlateMode : uint8
 
 /**
  * Floor trigger that moves linked UmbraPillar(s) when the player pawn walks over it.
- * The trigger uses a UBoxComponent overlap volume ¡ª the pawn walks through it, not into it.
+ * The trigger uses a UBoxComponent overlap volume ï¿½ï¿½ the pawn walks through it, not into it.
  */
 UCLASS()
 class AUmbraPressurePlate : public AActor
@@ -65,7 +66,7 @@ protected:
 		int32                OtherBodyIndex);
 
 private:
-	// ©¤©¤ Components ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Components ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 	/** Invisible overlap box that detects the pawn walking over the plate. */
 	UPROPERTY(VisibleAnywhere, Category = "Umbra|PressurePlate")
@@ -75,7 +76,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Umbra|PressurePlate")
 	TObjectPtr<UStaticMeshComponent> PlateMesh;
 
-	// ©¤©¤ Designer-specified data (set per-instance in the editor) ©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Designer-specified data (set per-instance in the editor) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 	/**
 	 * Which pillar(s) this plate controls.
@@ -99,12 +100,16 @@ private:
 			EditConditionHides))
 	int32 ToggleTargetStopIndex = 1;
 
-	// ©¤©¤ Runtime state ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Runtime state ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 	bool bHasFired = false;
 	bool bIsToggled = false;
 
-	// ©¤©¤ Internal ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+	// ï¿½ï¿½ï¿½ï¿½ Internal ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 	void ActivatePlate();
+
+	/** Sound played when the pressure plate is activated. */
+	UPROPERTY(EditAnywhere, Category = "Umbra|Audio")
+	TObjectPtr<USoundBase> PressurePlateSound;
 };
