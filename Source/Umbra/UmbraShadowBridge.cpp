@@ -3,12 +3,12 @@
 #include "UmbraShadowBridge.h"
 #include "UmbraLightSubsystem.h"
 #include "Components/BoxComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SpotLightComponent.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
-#include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "UObject/ConstructorHelpers.h"
 #include "EngineUtils.h"
 
 AUmbraShadowBridge::AUmbraShadowBridge()
@@ -26,10 +26,19 @@ AUmbraShadowBridge::AUmbraShadowBridge()
 	// Make the box walkable
 	BridgeBox->CanCharacterStepUpOn = ECB_Yes;
 
-	// Niagara effect for bridge visualization
-	BridgeEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BridgeEffect"));
-	BridgeEffect->SetupAttachment(BridgeBox);
-	BridgeEffect->SetAutoActivate(false);
+	// Instanced mesh for shadow tiles
+	ShadowTiles = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("ShadowTiles"));
+	ShadowTiles->SetupAttachment(BridgeBox);
+	ShadowTiles->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ShadowTiles->SetCastShadow(false);
+	ShadowTiles->NumCustomDataFloats = 0;
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneFinder(
+		TEXT("/Engine/BasicShapes/Plane.Plane"));
+	if (PlaneFinder.Succeeded())
+	{
+		ShadowTiles->SetStaticMesh(PlaneFinder.Object);
+	}
 }
 
 void AUmbraShadowBridge::BeginPlay()
@@ -41,10 +50,28 @@ void AUmbraShadowBridge::BeginPlay()
 		Sub->RegisterBridge(this);
 	}
 
-	// Pass bridge dimensions to the Niagara system
-	const FVector Extent = BridgeBox->GetScaledBoxExtent();
-	BridgeEffect->SetVectorParameter(TEXT("BridgeExtent"), Extent);
-	BridgeEffect->SetFloatParameter(TEXT("Activation"), 0.f);
+	// Create dynamic material
+	UMaterialInterface* BaseMat = BridgeMaterial;
+	if (!BaseMat)
+	{
+		BaseMat = ShadowTiles->GetMaterial(0);
+	}
+	if (BaseMat)
+	{
+		DynMaterial = UMaterialInstanceDynamic::Create(BaseMat, this);
+	}
+	else
+	{
+		DynMaterial = UMaterialInstanceDynamic::Create(
+			UMaterial::GetDefaultMaterial(MD_Surface), this);
+	}
+
+	if (DynMaterial)
+	{
+		DynMaterial->SetScalarParameterValue(TEXT("Opacity"), TileOpacity);
+		DynMaterial->SetVectorParameterValue(TEXT("BaseColor"), BridgeColor);
+		ShadowTiles->SetMaterial(0, DynMaterial);
+	}
 }
 
 void AUmbraShadowBridge::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -57,25 +84,26 @@ void AUmbraShadowBridge::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AUmbraShadowBridge::UpdateEffectParameters(float DeltaSeconds)
+void AUmbraShadowBridge::RebuildTiles()
 {
-	if (!FMath::IsNearlyEqual(ActivationAlpha, TargetActivationAlpha))
+	ShadowTiles->ClearInstances();
+
+	if (CachedShadowPositions.Num() == 0)
 	{
-		ActivationAlpha = FMath::FInterpConstantTo(
-			ActivationAlpha, TargetActivationAlpha, DeltaSeconds, ActivationSpeed);
+		return;
 	}
 
-	BridgeEffect->SetFloatParameter(TEXT("Activation"), ActivationAlpha);
+	// Each tile is a small plane scaled to cover one grid cell.
+	// Engine Plane is 100x100 UU, so scale = SampleSpacing / 100.
+	const float TileScale = SampleSpacing / 100.f;
+	const float TileZ = BridgeBox->GetComponentLocation().Z + BridgeBox->GetScaledBoxExtent().Z + 0.5f;
 
-	// Activate/deactivate based on whether there are shadow positions to render
-	const bool bHasPositions = CachedShadowPositions.Num() > 0;
-	if (bHasPositions && !BridgeEffect->IsActive())
+	for (const FVector& Pos : CachedShadowPositions)
 	{
-		BridgeEffect->Activate();
-	}
-	else if (!bHasPositions && BridgeEffect->IsActive())
-	{
-		BridgeEffect->Deactivate();
+		FTransform T;
+		T.SetLocation(FVector(Pos.X, Pos.Y, TileZ));
+		T.SetScale3D(FVector(TileScale, TileScale, 1.f));
+		ShadowTiles->AddInstance(T, /*bWorldSpace=*/ true);
 	}
 }
 
@@ -102,7 +130,6 @@ void AUmbraShadowBridge::SampleShadowPositions()
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
-	// Exclude actors tagged "NoShadow" from shadow traces
 	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(TEXT("NoShadow")))
@@ -118,8 +145,6 @@ void AUmbraShadowBridge::SampleShadowPositions()
 			FVector LocalOffset(-ScaledExtent.X + Xi * StepX, -ScaledExtent.Y + Yi * StepY, ScaledExtent.Z + 1.f);
 			FVector WorldPos = BoxCenter + BoxRot.RotateVector(LocalOffset);
 
-			// Match the pawn's shadow logic: a point is in shadow if ANY
-			// in-range light is blocked (same as UmbraPawn::PerformShadowCheck).
 			bool bPointInShadow = false;
 			bool bAnyLightInRange = false;
 
@@ -148,7 +173,6 @@ void AUmbraShadowBridge::SampleShadowPositions()
 					continue;
 				}
 
-				// For spotlights, skip if point is outside the cone
 				if (const USpotLightComponent* Spot = Cast<USpotLightComponent>(Light))
 				{
 					const FVector LightForward = Spot->GetForwardVector();
@@ -168,7 +192,6 @@ void AUmbraShadowBridge::SampleShadowPositions()
 				FHitResult Hit;
 				if (GetWorld()->LineTraceSingleByChannel(Hit, WorldPos, LightLoc, ECC_Visibility, LightParams))
 				{
-					// Blocked path to this light — point is in shadow
 					bPointInShadow = true;
 					break;
 				}
@@ -176,7 +199,6 @@ void AUmbraShadowBridge::SampleShadowPositions()
 
 			if (bPointInShadow && bAnyLightInRange)
 			{
-				// Only keep points over void (no solid ground below)
 				FHitResult GroundHit;
 				const FVector TraceEnd = WorldPos - FVector(0.f, 0.f, GroundTraceDepth);
 				if (!GetWorld()->LineTraceSingleByChannel(GroundHit, WorldPos, TraceEnd, ECC_Visibility, QueryParams))
@@ -192,16 +214,11 @@ void AUmbraShadowBridge::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	UpdateEffectParameters(DeltaSeconds);
-
-	// Throttle shadow sampling to every SampleInterval frames
 	if (++FrameCounter >= SampleInterval)
 	{
 		FrameCounter = 0;
 		SampleShadowPositions();
-
-		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
-			BridgeEffect, FName("ShadowPositions"), CachedShadowPositions);
+		RebuildTiles();
 	}
 }
 
@@ -209,12 +226,11 @@ void AUmbraShadowBridge::EnableBridge()
 {
 	bBridgeEnabled = true;
 	BridgeBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	TargetActivationAlpha = 1.f;
 }
 
 void AUmbraShadowBridge::DisableBridge()
 {
 	bBridgeEnabled = false;
 	BridgeBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	TargetActivationAlpha = 0.f;
+	ShadowTiles->ClearInstances();
 }
