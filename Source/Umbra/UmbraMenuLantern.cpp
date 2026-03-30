@@ -67,7 +67,7 @@ void AUmbraMenuLantern::Tick(float DeltaSeconds)
             const float T = (FixedY - WorldPos.Y) / WorldDir.Y;
             if (T > 0.f)
             {
-                FVector Target = WorldPos + WorldDir * T;
+                FVector Target = WorldPos + WorldDir * T + CursorOffset;
                 Target.Y = FixedY;
 
                 // Smooth follow

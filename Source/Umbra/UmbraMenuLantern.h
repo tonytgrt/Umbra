@@ -34,4 +34,8 @@ private:
     /** How quickly the lantern follows the cursor (higher = snappier). */
     UPROPERTY(EditAnywhere, Category = "Menu Lantern")
     float FollowSpeed = 12.f;
+
+    /** Offset from the cursor hit point to the actor's pivot, so the mesh center aligns with the cursor. */
+    UPROPERTY(EditAnywhere, Category = "Menu Lantern")
+    FVector CursorOffset = FVector::ZeroVector;
 };
