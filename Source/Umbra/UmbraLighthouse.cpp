@@ -2,6 +2,7 @@
 #include "UmbraLightSubsystem.h"
 #include "Components/SpotLightComponent.h"
 #include "Umbra.h"
+#include "Engine/World.h"
 
 AUmbraLighthouse::AUmbraLighthouse()
 {

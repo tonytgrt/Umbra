@@ -3,6 +3,7 @@
 #include "UmbraPillar.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Umbra.h"
 

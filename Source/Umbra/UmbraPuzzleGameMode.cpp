@@ -7,6 +7,7 @@
 #include "UmbraLevelClearedWidget.h"
 #include "Umbra.h"
 #include "Blueprint/UserWidget.h"
+#include "Engine/World.h"
 
 
 AUmbraPuzzleGameMode::AUmbraPuzzleGameMode()

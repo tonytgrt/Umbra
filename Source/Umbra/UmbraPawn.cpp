@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "UmbraShadowBridge.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/LightComponent.h"
 #include "Components/PointLightComponent.h"
@@ -15,6 +16,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "Umbra.h"
 

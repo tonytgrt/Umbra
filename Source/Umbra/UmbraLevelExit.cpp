@@ -7,6 +7,7 @@
 #include "NiagaraComponent.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUmbraLevelExit::AUmbraLevelExit()

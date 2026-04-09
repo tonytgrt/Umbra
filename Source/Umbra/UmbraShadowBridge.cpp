@@ -10,6 +10,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "EngineUtils.h"
+#include "Engine/World.h"
 
 AUmbraShadowBridge::AUmbraShadowBridge()
 {

@@ -4,10 +4,12 @@
 #include "UmbraLightSubsystem.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Components/PointLightComponent.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Engine/World.h"
 
 AUmbraLantern::AUmbraLantern()
 {

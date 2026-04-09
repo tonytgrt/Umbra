@@ -8,6 +8,7 @@
 #include "Umbra.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 
 AUmbraTutorialGameMode::AUmbraTutorialGameMode()
 {
