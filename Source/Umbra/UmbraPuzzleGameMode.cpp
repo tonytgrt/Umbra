@@ -5,8 +5,10 @@
 #include "UmbraPawnController.h"
 #include "UmbraHUDWidget.h"
 #include "UmbraLevelClearedWidget.h"
+#include "UmbraPauseWidget.h"
 #include "Umbra.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AUmbraPuzzleGameMode::AUmbraPuzzleGameMode()
@@ -46,6 +48,45 @@ void AUmbraPuzzleGameMode::BeginPlay()
     InputMode.SetHideCursorDuringCapture(false);
     PC->bShowMouseCursor = true;
     PC->SetInputMode(InputMode);
+}
+
+void AUmbraPuzzleGameMode::TogglePause()
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
+
+    if (UGameplayStatics::IsGamePaused(this))
+    {
+        UGameplayStatics::SetGamePaused(this, false);
+
+        FInputModeGameAndUI InputMode;
+        InputMode.SetHideCursorDuringCapture(false);
+        PC->SetInputMode(InputMode);
+
+        if (PauseWidget)
+        {
+            PauseWidget->RemoveFromParent();
+            PauseWidget = nullptr;
+        }
+    }
+    else
+    {
+        UGameplayStatics::SetGamePaused(this, true);
+
+        if (PauseWidgetClass)
+        {
+            PauseWidget = CreateWidget<UUmbraPauseWidget>(PC, PauseWidgetClass);
+            if (PauseWidget)
+            {
+                PauseWidget->AddToViewport(20);
+
+                FInputModeGameAndUI InputMode;
+                InputMode.SetWidgetToFocus(PauseWidget->TakeWidget());
+                InputMode.SetHideCursorDuringCapture(false);
+                PC->SetInputMode(InputMode);
+            }
+        }
+    }
 }
 
 void AUmbraPuzzleGameMode::OnLevelCleared()

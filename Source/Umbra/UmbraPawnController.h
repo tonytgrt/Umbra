@@ -44,6 +44,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> ResetLevelAction;
 
+	/** Input action for pausing the game. */
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> PauseAction;
+
 	// --- Input handlers ---
 	void OnMoveTriggered(const struct FInputActionValue& Value);
 	void OnMoveCompleted(const struct FInputActionValue& Value);
@@ -51,6 +55,7 @@ private:
 	void OnMouseClickTriggered();
 	void OnMouseClickReleased();
 	void OnResetLevel();
+	void OnPauseTriggered(const FInputActionValue& Value);
 
 	// --- State ---
 	FVector2D CachedMoveInput;

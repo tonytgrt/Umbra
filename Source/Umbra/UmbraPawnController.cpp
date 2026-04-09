@@ -3,6 +3,8 @@
 #include "UmbraPawnController.h"
 #include "UmbraPawn.h"
 #include "UmbraInteractable.h"
+#include "UmbraPuzzleGameMode.h"
+#include "UmbraTutorialGameMode.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
@@ -51,6 +53,11 @@ void AUmbraPawnController::SetupInputComponent()
 		if (ResetLevelAction)
 		{
 			EIC->BindAction(ResetLevelAction, ETriggerEvent::Started, this, &AUmbraPawnController::OnResetLevel);
+		}
+
+		if (PauseAction)
+		{
+			EIC->BindAction(PauseAction, ETriggerEvent::Started, this, &AUmbraPawnController::OnPauseTriggered);
 		}
 	}
 	else
@@ -134,4 +141,16 @@ void AUmbraPawnController::OnResetLevel()
 {
 	// TODO: tell GameMode to reset level
 	UE_LOG(LogUmbra, Log, TEXT("Reset level requested"));
+}
+
+void AUmbraPawnController::OnPauseTriggered(const FInputActionValue& Value)
+{
+	if (AUmbraPuzzleGameMode* GM = GetWorld()->GetAuthGameMode<AUmbraPuzzleGameMode>())
+	{
+		GM->TogglePause();
+	}
+	else if (AUmbraTutorialGameMode* TutGM = GetWorld()->GetAuthGameMode<AUmbraTutorialGameMode>())
+	{
+		TutGM->TogglePause();
+	}
 }
