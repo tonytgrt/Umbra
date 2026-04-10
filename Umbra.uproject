@@ -28,6 +28,20 @@
 		{
 			"Name": "GameplayStateTree",
 			"Enabled": true
+		},
+		{
+			"Name": "Interchange",
+			"Enabled": true,
+			"PlatformDenyList": [
+				"IOS"
+			]
+		},
+		{
+			"Name": "InterchangeEditor",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
 		}
 	]
 }

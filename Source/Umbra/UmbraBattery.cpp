@@ -2,6 +2,7 @@
 #include "UmbraPawn.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"

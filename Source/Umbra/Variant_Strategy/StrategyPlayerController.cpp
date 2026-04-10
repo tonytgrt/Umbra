@@ -13,6 +13,7 @@
 #include "StrategyHUD.h"
 #include "Engine/CollisionProfile.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "StrategyUnit.h"
 #include "NavigationSystem.h"
 #include "Engine/OverlapResult.h"
