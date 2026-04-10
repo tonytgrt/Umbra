@@ -8,6 +8,7 @@
 
 class UUmbraTutorialHUDWidget;
 class UUmbraTutorialCompleteWidget;
+class UUmbraPauseWidget;
 
 /**
  *  A single tutorial step: when the orb's Y position crosses MinY,
@@ -73,6 +74,9 @@ public:
 	/** Get the level to transition to after this tutorial. */
 	FName GetNextLevelName() const { return NextLevelName; }
 
+	/** Toggle pause on/off. Called by the controller on Escape press. */
+	void TogglePause();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -101,4 +105,11 @@ private:
 
 	/** Index of the currently active step (-1 = none). */
 	int32 ActiveStepIndex = -1;
+
+	/** Widget Blueprint class for the pause screen. Set in BP child. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUmbraPauseWidget> PauseWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUmbraPauseWidget> PauseWidget;
 };

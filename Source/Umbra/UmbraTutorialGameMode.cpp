@@ -3,6 +3,7 @@
 #include "UmbraTutorialGameMode.h"
 #include "UmbraTutorialHUDWidget.h"
 #include "UmbraTutorialCompleteWidget.h"
+#include "UmbraPauseWidget.h"
 #include "UmbraTutorialPawn.h"
 #include "UmbraPawnController.h"
 #include "Umbra.h"
@@ -138,5 +139,44 @@ void AUmbraTutorialGameMode::HideTutorialText()
 	if (TutorialHUDWidget)
 	{
 		TutorialHUDWidget->HideTutorialText();
+	}
+}
+
+void AUmbraTutorialGameMode::TogglePause()
+{
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (!PC) return;
+
+	if (UGameplayStatics::IsGamePaused(this))
+	{
+		UGameplayStatics::SetGamePaused(this, false);
+
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		PC->SetInputMode(InputMode);
+
+		if (PauseWidget)
+		{
+			PauseWidget->RemoveFromParent();
+			PauseWidget = nullptr;
+		}
+	}
+	else
+	{
+		UGameplayStatics::SetGamePaused(this, true);
+
+		if (PauseWidgetClass)
+		{
+			PauseWidget = CreateWidget<UUmbraPauseWidget>(PC, PauseWidgetClass);
+			if (PauseWidget)
+			{
+				PauseWidget->AddToViewport(20);
+
+				FInputModeGameAndUI InputMode;
+				InputMode.SetWidgetToFocus(PauseWidget->TakeWidget());
+				InputMode.SetHideCursorDuringCapture(false);
+				PC->SetInputMode(InputMode);
+			}
+		}
 	}
 }

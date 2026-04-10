@@ -8,6 +8,7 @@
 
 class UUmbraHUDWidget;
 class UUmbraLevelClearedWidget;
+class UUmbraPauseWidget;
 
 /**
  *  Game mode for Umbra puzzle levels.
@@ -22,6 +23,9 @@ public:
 	AUmbraPuzzleGameMode();
 
 	void ResetLevel();
+
+    /** Toggle pause on/off. Called by the controller on Escape press. */
+    void TogglePause();
 
     /** Call this when the player reaches the level exit. */
     UFUNCTION(BlueprintCallable, Category = "Puzzle")
@@ -60,4 +64,11 @@ private:
 
     UPROPERTY()
     TObjectPtr<UUmbraLevelClearedWidget> LevelClearedWidget;
+
+    /** Widget Blueprint class for the pause screen. Set in BP child. */
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<UUmbraPauseWidget> PauseWidgetClass;
+
+    UPROPERTY()
+    TObjectPtr<UUmbraPauseWidget> PauseWidget;
 };
