@@ -34,15 +34,15 @@ void AUmbraPawnController::BeginPlay()
 
 	// Detect mobile platform
 	// TODO: revert to platform check after debugging thumbstick
-	// #if PLATFORM_IOS || PLATFORM_ANDROID
+	 #if PLATFORM_IOS || PLATFORM_ANDROID
 	bIsMobile = true;
-	// #else
-	// bIsMobile = false;
-	// #endif
+	 #else
+	 bIsMobile = false;
+	 #endif
 
 	if (bIsMobile)
 	{
-		// bShowMouseCursor = false;  // TODO: re-enable after debugging
+		 bShowMouseCursor = false;  // TODO: re-enable after debugging
 
 		if (ThumbstickClass)
 		{
