@@ -5,10 +5,12 @@
 #include "UmbraInteractable.h"
 #include "UmbraPuzzleGameMode.h"
 #include "UmbraTutorialGameMode.h"
+#include "UmbraTouchThumbstick.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "Kismet/GameplayStatics.h"
 #include "Umbra.h"
 
 AUmbraPawnController::AUmbraPawnController()
@@ -28,6 +30,37 @@ void AUmbraPawnController::BeginPlay()
 		{
 			Subsystem->AddMappingContext(UmbraMappingContext, 0);
 		}
+	}
+
+	// Detect mobile platform
+#if PLATFORM_IOS || PLATFORM_ANDROID
+	bIsMobile = true;
+#else
+	bIsMobile = false;
+#endif
+
+	if (bIsMobile)
+	{
+		bShowMouseCursor = false;
+
+		if (ThumbstickClass)
+		{
+			Thumbstick = CreateWidget<UUmbraTouchThumbstick>(this, ThumbstickClass);
+		}
+		else
+		{
+			Thumbstick = CreateWidget<UUmbraTouchThumbstick>(this, UUmbraTouchThumbstick::StaticClass());
+		}
+
+		if (Thumbstick)
+		{
+			Thumbstick->AddToViewport(100);
+			Thumbstick->SetPositionInViewport(FVector2D(60.f, -60.f), false);
+			Thumbstick->SetDesiredSizeInViewport(FVector2D(200.f, 200.f));
+			Thumbstick->SetAlignmentInViewport(FVector2D(0.f, 1.f));
+		}
+
+		bEnableTouchEvents = true;
 	}
 }
 
@@ -64,16 +97,30 @@ void AUmbraPawnController::SetupInputComponent()
 	{
 		UE_LOG(LogUmbra, Error, TEXT("UmbraPawnController: No Enhanced Input Component found."));
 	}
+
+	// Touch input for lantern dragging on mobile
+	InputComponent->BindTouch(EInputEvent::IE_Pressed, this,
+		&AUmbraPawnController::OnTouchPressed);
+	InputComponent->BindTouch(EInputEvent::IE_Repeat, this,
+		&AUmbraPawnController::OnTouchMoved);
+	InputComponent->BindTouch(EInputEvent::IE_Released, this,
+		&AUmbraPawnController::OnTouchReleased);
 }
 
 void AUmbraPawnController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// Forward cached move input to the pawn each tick
 	if (AUmbraPawn* UmbraPawn = Cast<AUmbraPawn>(GetPawn()))
 	{
-		UmbraPawn->SetMoveInput(CachedMoveInput);
+		if (bIsMobile && Thumbstick)
+		{
+			UmbraPawn->SetMoveInput(Thumbstick->GetStickInput());
+		}
+		else
+		{
+			UmbraPawn->SetMoveInput(CachedMoveInput);
+		}
 	}
 }
 
@@ -153,4 +200,93 @@ void AUmbraPawnController::OnPauseTriggered(const FInputActionValue& Value)
 	{
 		TutGM->TogglePause();
 	}
+}
+
+// --- Mobile touch handlers ---
+
+void AUmbraPawnController::OnTouchPressed(ETouchIndex::Type FingerIndex, FVector Location)
+{
+	if (!bIsMobile) return;
+
+	const FVector2D ScreenPos(Location.X, Location.Y);
+	int32 ViewX, ViewY;
+	GetViewportSize(ViewX, ViewY);
+
+	// Left 40% of screen is reserved for the thumbstick widget
+	if (ScreenPos.X < ViewX * 0.4f) return;
+
+	if (!bTouchDragging)
+	{
+		DragFingerIndex = static_cast<int32>(FingerIndex);
+		TouchDragStart(ScreenPos);
+	}
+}
+
+void AUmbraPawnController::OnTouchMoved(ETouchIndex::Type FingerIndex, FVector Location)
+{
+	if (bTouchDragging && static_cast<int32>(FingerIndex) == DragFingerIndex)
+	{
+		TouchDragUpdate(FVector2D(Location.X, Location.Y));
+	}
+}
+
+void AUmbraPawnController::OnTouchReleased(ETouchIndex::Type FingerIndex, FVector Location)
+{
+	if (bTouchDragging && static_cast<int32>(FingerIndex) == DragFingerIndex)
+	{
+		TouchDragEnd();
+	}
+}
+
+void AUmbraPawnController::TouchDragStart(const FVector2D& ScreenPos)
+{
+	FVector WorldOrigin, WorldDirection;
+	if (UGameplayStatics::DeprojectScreenToWorld(this, ScreenPos, WorldOrigin, WorldDirection))
+	{
+		FHitResult Hit;
+		FVector TraceEnd = WorldOrigin + WorldDirection * 10000.f;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, WorldOrigin, TraceEnd, ECC_Visibility))
+		{
+			if (Hit.GetActor() && Hit.GetActor()->Implements<UUmbraInteractable>())
+			{
+				DragTarget.SetInterface(Cast<IUmbraInteractable>(Hit.GetActor()));
+				DragTarget.SetObject(Hit.GetActor());
+				DragPlaneZ = Hit.GetActor()->GetActorLocation().Z;
+				IUmbraInteractable::Execute_OnDragStart(Hit.GetActor(), Hit.Location);
+				bTouchDragging = true;
+				return;
+			}
+		}
+	}
+	bTouchDragging = false;
+}
+
+void AUmbraPawnController::TouchDragUpdate(const FVector2D& ScreenPos)
+{
+	if (!DragTarget) return;
+
+	FVector WorldOrigin, WorldDirection;
+	if (UGameplayStatics::DeprojectScreenToWorld(this, ScreenPos, WorldOrigin, WorldDirection))
+	{
+		if (FMath::Abs(WorldDirection.Z) > KINDA_SMALL_NUMBER)
+		{
+			const float T = (DragPlaneZ - WorldOrigin.Z) / WorldDirection.Z;
+			if (T > 0.f)
+			{
+				const FVector PlaneHit = WorldOrigin + WorldDirection * T;
+				IUmbraInteractable::Execute_OnDragUpdate(DragTarget.GetObject(), PlaneHit);
+			}
+		}
+	}
+}
+
+void AUmbraPawnController::TouchDragEnd()
+{
+	if (DragTarget)
+	{
+		IUmbraInteractable::Execute_OnDragEnd(DragTarget.GetObject());
+		DragTarget = nullptr;
+	}
+	bTouchDragging = false;
+	DragFingerIndex = -1;
 }

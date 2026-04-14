@@ -10,6 +10,7 @@ class UInputMappingContext;
 class UInputAction;
 class AUmbraPawn;
 class IUmbraInteractable;
+class UUmbraTouchThumbstick;
 
 /**
  *  Controller for Umbra gameplay.
@@ -63,4 +64,31 @@ private:
 
 	/** Z height of the drag plane, captured when the drag starts */
 	float DragPlaneZ = 0.f;
+
+	// --- Mobile touch support ---
+
+	/** Thumbstick widget (created at runtime on mobile). */
+	UPROPERTY()
+	TObjectPtr<UUmbraTouchThumbstick> Thumbstick;
+
+	/** Thumbstick widget class (set in Blueprint, or defaults to UUmbraTouchThumbstick). */
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mobile")
+	TSubclassOf<UUmbraTouchThumbstick> ThumbstickClass;
+
+	/** Whether we're running on a touch device. */
+	bool bIsMobile = false;
+
+	/** True while a touch drag is active on the right side (lantern drag). */
+	bool bTouchDragging = false;
+
+	/** Finger index used for the drag (to distinguish from thumbstick finger). */
+	int32 DragFingerIndex = -1;
+
+	void OnTouchPressed(ETouchIndex::Type FingerIndex, FVector Location);
+	void OnTouchMoved(ETouchIndex::Type FingerIndex, FVector Location);
+	void OnTouchReleased(ETouchIndex::Type FingerIndex, FVector Location);
+
+	void TouchDragStart(const FVector2D& ScreenPos);
+	void TouchDragUpdate(const FVector2D& ScreenPos);
+	void TouchDragEnd();
 };
