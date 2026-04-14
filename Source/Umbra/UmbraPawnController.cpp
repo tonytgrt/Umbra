@@ -33,15 +33,16 @@ void AUmbraPawnController::BeginPlay()
 	}
 
 	// Detect mobile platform
-#if PLATFORM_IOS || PLATFORM_ANDROID
+	// TODO: revert to platform check after debugging thumbstick
+	// #if PLATFORM_IOS || PLATFORM_ANDROID
 	bIsMobile = true;
-#else
-	bIsMobile = false;
-#endif
+	// #else
+	// bIsMobile = false;
+	// #endif
 
 	if (bIsMobile)
 	{
-		bShowMouseCursor = false;
+		// bShowMouseCursor = false;  // TODO: re-enable after debugging
 
 		if (ThumbstickClass)
 		{
@@ -55,9 +56,16 @@ void AUmbraPawnController::BeginPlay()
 		if (Thumbstick)
 		{
 			Thumbstick->AddToViewport(100);
-			Thumbstick->SetPositionInViewport(FVector2D(60.f, -60.f), false);
-			Thumbstick->SetDesiredSizeInViewport(FVector2D(200.f, 200.f));
-			Thumbstick->SetAlignmentInViewport(FVector2D(0.f, 1.f));
+
+			// Position in the bottom-left corner.
+			// Viewport coordinates are from top-left, so compute Y from viewport height.
+			int32 ViewX, ViewY;
+			GetViewportSize(ViewX, ViewY);
+			const float ThumbSize = 200.f;
+			const float Padding = 160.f;
+			Thumbstick->SetPositionInViewport(
+				FVector2D(Padding, ViewY - ThumbSize - Padding), false);
+			Thumbstick->SetDesiredSizeInViewport(FVector2D(ThumbSize, ThumbSize));
 		}
 
 		bEnableTouchEvents = true;

@@ -34,6 +34,14 @@ protected:
     virtual FReply NativeOnTouchEnded(const FGeometry& InGeometry,
         const FPointerEvent& InGestureEvent) override;
 
+    // Mouse handlers for PC debugging (forward to the same stick logic)
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry,
+        const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseMove(const FGeometry& InGeometry,
+        const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry,
+        const FPointerEvent& InMouseEvent) override;
+
 private:
     /** Radius of the outer base circle in pixels. */
     UPROPERTY(EditAnywhere, Category = "Thumbstick")

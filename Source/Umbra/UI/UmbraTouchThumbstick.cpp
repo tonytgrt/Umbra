@@ -5,6 +5,7 @@ void UUmbraTouchThumbstick::NativeConstruct()
 {
     Super::NativeConstruct();
     SetVisibility(ESlateVisibility::Visible);
+    SetMinimumDesiredSize(FVector2D(BaseRadius * 2.f, BaseRadius * 2.f));
 }
 
 int32 UUmbraTouchThumbstick::NativePaint(const FPaintArgs& Args,
@@ -109,6 +110,65 @@ FReply UUmbraTouchThumbstick::NativeOnTouchEnded(const FGeometry& InGeometry,
     return FReply::Handled().ReleaseMouseCapture();
 }
 
+// --- Mouse handlers for PC debugging ---
+
+FReply UUmbraTouchThumbstick::NativeOnMouseButtonDown(const FGeometry& InGeometry,
+    const FPointerEvent& InMouseEvent)
+{
+    if (bIsTouching) return FReply::Unhandled();
+
+    const FVector2D LocalPos = InGeometry.AbsoluteToLocal(
+        InMouseEvent.GetScreenSpacePosition());
+    const FVector2D LocalSize = InGeometry.GetLocalSize();
+    BaseCenter = LocalSize * 0.5f;
+
+    const float Dist = FVector2D::Distance(LocalPos, BaseCenter);
+    if (Dist > BaseRadius * 1.5f) return FReply::Unhandled();
+
+    bIsTouching = true;
+    TrackedFingerIndex = 0;
+
+    KnobOffset = LocalPos - BaseCenter;
+    if (KnobOffset.Size() > BaseRadius)
+    {
+        KnobOffset = KnobOffset.GetSafeNormal() * BaseRadius;
+    }
+    UpdateStickInput();
+
+    return FReply::Handled().CaptureMouse(GetCachedWidget().ToSharedRef());
+}
+
+FReply UUmbraTouchThumbstick::NativeOnMouseMove(const FGeometry& InGeometry,
+    const FPointerEvent& InMouseEvent)
+{
+    if (!bIsTouching) return FReply::Unhandled();
+
+    const FVector2D LocalPos = InGeometry.AbsoluteToLocal(
+        InMouseEvent.GetScreenSpacePosition());
+
+    KnobOffset = LocalPos - BaseCenter;
+    if (KnobOffset.Size() > BaseRadius)
+    {
+        KnobOffset = KnobOffset.GetSafeNormal() * BaseRadius;
+    }
+    UpdateStickInput();
+
+    return FReply::Handled();
+}
+
+FReply UUmbraTouchThumbstick::NativeOnMouseButtonUp(const FGeometry& InGeometry,
+    const FPointerEvent& InMouseEvent)
+{
+    if (!bIsTouching) return FReply::Unhandled();
+
+    bIsTouching = false;
+    TrackedFingerIndex = -1;
+    KnobOffset = FVector2D::ZeroVector;
+    StickInput = FVector2D::ZeroVector;
+
+    return FReply::Handled().ReleaseMouseCapture();
+}
+
 void UUmbraTouchThumbstick::UpdateStickInput()
 {
     const float Magnitude = KnobOffset.Size() / BaseRadius;
@@ -120,6 +180,10 @@ void UUmbraTouchThumbstick::UpdateStickInput()
     {
         // Remap [DeadZone..1] to [0..1]
         const float Remapped = (Magnitude - DeadZone) / (1.f - DeadZone);
-        StickInput = KnobOffset.GetSafeNormal() * FMath::Clamp(Remapped, 0.f, 1.f);
+        const FVector2D Dir = KnobOffset.GetSafeNormal() * FMath::Clamp(Remapped, 0.f, 1.f);
+        // Screen space: X=right, Y=down.
+        // Pawn expects: X=forward(screen-up), Y=right(screen-right).
+        // Swap and negate to match.
+        StickInput = FVector2D(-Dir.Y, Dir.X);
     }
 }
