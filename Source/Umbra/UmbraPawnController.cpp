@@ -127,7 +127,7 @@ void AUmbraPawnController::Tick(float DeltaSeconds)
 					FVector2D(ThumbstickSize, ThumbstickSize));
 				Thumbstick->SetPositionInViewport(
 					FVector2D(ThumbstickPadding,
-						ViewY - ThumbstickSize), false);
+						ViewY - ThumbstickPadding), false);
 			}
 		}
 		else
