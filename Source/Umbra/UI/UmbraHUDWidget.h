@@ -7,6 +7,7 @@
 #include "UmbraHUDWidget.generated.h"
 
 class UTextBlock;
+class UButton;
 
 /**
  *  In-game HUD widget that displays contextual help text.
@@ -43,8 +44,18 @@ public:
     /** Set the level name displayed on the HUD. */
     void SetLevelName(const FText& Name);
 
+protected:
+    virtual void NativeConstruct() override;
+
 private:
     /** TextBlock named "Level" in the Widget Blueprint. */
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UTextBlock> Level;
+
+    /** Pause button — add a Button named "PauseButton" in the Widget Blueprint (optional). */
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UButton> PauseButton;
+
+    UFUNCTION()
+    void OnPauseClicked();
 };

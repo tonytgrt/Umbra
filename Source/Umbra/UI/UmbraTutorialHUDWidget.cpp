@@ -21,6 +21,11 @@ void UUmbraTutorialHUDWidget::NativeConstruct()
 	{
 		SkipButton->OnClicked.AddDynamic(this, &UUmbraTutorialHUDWidget::OnSkipClicked);
 	}
+
+	if (PauseButton)
+	{
+		PauseButton->OnClicked.AddDynamic(this, &UUmbraTutorialHUDWidget::OnPauseClicked);
+	}
 }
 
 void UUmbraTutorialHUDWidget::ShowTutorialText(const FText& Message)
@@ -47,5 +52,13 @@ void UUmbraTutorialHUDWidget::OnSkipClicked()
 	if (GM)
 	{
 		GM->SkipTutorial();
+	}
+}
+
+void UUmbraTutorialHUDWidget::OnPauseClicked()
+{
+	if (AUmbraTutorialGameMode* GM = GetWorld()->GetAuthGameMode<AUmbraTutorialGameMode>())
+	{
+		GM->TogglePause();
 	}
 }

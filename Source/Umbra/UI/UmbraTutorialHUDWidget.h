@@ -41,6 +41,13 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> SkipButton;
 
+	/** Bound to a Button named "PauseButton" in the Widget Blueprint (optional). */
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UButton> PauseButton;
+
 	UFUNCTION()
 	void OnSkipClicked();
+
+	UFUNCTION()
+	void OnPauseClicked();
 };
