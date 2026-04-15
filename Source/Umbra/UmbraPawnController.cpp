@@ -37,12 +37,12 @@ void AUmbraPawnController::BeginPlay()
 	 #if PLATFORM_IOS || PLATFORM_ANDROID
 	bIsMobile = true;
 	 #else
-	 bIsMobile = true;
+	 bIsMobile = false;
 	 #endif
 
 	if (bIsMobile)
 	{
-		 bShowMouseCursor = true;  // TODO: re-enable after debugging
+		 bShowMouseCursor = false;  // TODO: re-enable after debugging
 
 		if (ThumbstickClass)
 		{
@@ -127,7 +127,7 @@ void AUmbraPawnController::Tick(float DeltaSeconds)
 					FVector2D(ThumbstickSize, ThumbstickSize));
 				Thumbstick->SetPositionInViewport(
 					FVector2D(ThumbstickPadding,
-						ViewY - ThumbstickSize - ThumbstickPadding), false);
+						ViewY - ThumbstickSize), false);
 			}
 		}
 		else
