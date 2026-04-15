@@ -5,7 +5,7 @@ void UUmbraTouchThumbstick::NativeConstruct()
 {
     Super::NativeConstruct();
     SetVisibility(ESlateVisibility::Visible);
-    SetMinimumDesiredSize(FVector2D(BaseRadius * 2.f, BaseRadius * 2.f));
+    SetMinimumDesiredSize(FVector2D(160.f, 160.f));
 }
 
 int32 UUmbraTouchThumbstick::NativePaint(const FPaintArgs& Args,
@@ -17,6 +17,10 @@ int32 UUmbraTouchThumbstick::NativePaint(const FPaintArgs& Args,
     const FVector2D Center = LocalSize * 0.5f;
     const float Opacity = bIsTouching ? ActiveOpacity : IdleOpacity;
     constexpr int32 NumSegments = 32;
+
+    // Derive radii from actual widget size so resizing works
+    BaseRadius = FMath::Min(LocalSize.X, LocalSize.Y) * 0.45f;
+    const float KnobRadius = BaseRadius * KnobRadiusFraction;
 
     // Helper lambda: build a circle as a line loop
     auto MakeCirclePoints = [&](const FVector2D& CircleCenter, float Radius) -> TArray<FVector2f>

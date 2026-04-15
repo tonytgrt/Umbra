@@ -37,12 +37,12 @@ void AUmbraPawnController::BeginPlay()
 	 #if PLATFORM_IOS || PLATFORM_ANDROID
 	bIsMobile = true;
 	 #else
-	 bIsMobile = false;
+	 bIsMobile = true;
 	 #endif
 
 	if (bIsMobile)
 	{
-		 bShowMouseCursor = false;  // TODO: re-enable after debugging
+		 bShowMouseCursor = true;  // TODO: re-enable after debugging
 
 		if (ThumbstickClass)
 		{
@@ -56,16 +56,8 @@ void AUmbraPawnController::BeginPlay()
 		if (Thumbstick)
 		{
 			Thumbstick->AddToViewport(100);
-
-			// Position in the bottom-left corner.
-			// Viewport coordinates are from top-left, so compute Y from viewport height.
-			int32 ViewX, ViewY;
-			GetViewportSize(ViewX, ViewY);
-			const float ThumbSize = 200.f;
-			const float Padding = 160.f;
-			Thumbstick->SetPositionInViewport(
-				FVector2D(Padding, ViewY - ThumbSize - Padding), false);
-			Thumbstick->SetDesiredSizeInViewport(FVector2D(ThumbSize, ThumbSize));
+			// Position and size are updated every frame in Tick
+			// to handle viewport size differences across devices.
 		}
 
 		bEnableTouchEvents = true;
@@ -124,6 +116,19 @@ void AUmbraPawnController::Tick(float DeltaSeconds)
 		if (bIsMobile && Thumbstick)
 		{
 			UmbraPawn->SetMoveInput(Thumbstick->GetStickInput());
+
+			// Reposition thumbstick every frame so it's always correct
+			// regardless of device, resolution, or orientation.
+			int32 ViewX, ViewY;
+			GetViewportSize(ViewX, ViewY);
+			if (ViewX > 0 && ViewY > 0)
+			{
+				Thumbstick->SetDesiredSizeInViewport(
+					FVector2D(ThumbstickSize, ThumbstickSize));
+				Thumbstick->SetPositionInViewport(
+					FVector2D(ThumbstickPadding,
+						ViewY - ThumbstickSize - ThumbstickPadding), false);
+			}
 		}
 		else
 		{
@@ -216,15 +221,9 @@ void AUmbraPawnController::OnTouchPressed(ETouchIndex::Type FingerIndex, FVector
 {
 	if (!bIsMobile) return;
 
-	const FVector2D ScreenPos(Location.X, Location.Y);
-	int32 ViewX, ViewY;
-	GetViewportSize(ViewX, ViewY);
-
-	// Left 40% of screen is reserved for the thumbstick widget
-	if (ScreenPos.X < ViewX * 0.4f) return;
-
 	if (!bTouchDragging)
 	{
+		const FVector2D ScreenPos(Location.X, Location.Y);
 		DragFingerIndex = static_cast<int32>(FingerIndex);
 		TouchDragStart(ScreenPos);
 	}

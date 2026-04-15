@@ -75,6 +75,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input|Mobile")
 	TSubclassOf<UUmbraTouchThumbstick> ThumbstickClass;
 
+	/** Thumbstick size in viewport pixels. */
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mobile")
+	float ThumbstickSize = 400.f;
+
+	/** Padding from the bottom-left corner in viewport pixels. */
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mobile")
+	float ThumbstickPadding = 160.f;
+
 	/** Whether we're running on a touch device. */
 	bool bIsMobile = false;
 

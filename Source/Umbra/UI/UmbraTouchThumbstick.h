@@ -43,13 +43,12 @@ protected:
         const FPointerEvent& InMouseEvent) override;
 
 private:
-    /** Radius of the outer base circle in pixels. */
-    UPROPERTY(EditAnywhere, Category = "Thumbstick")
-    float BaseRadius = 80.f;
+    /** Knob radius as a fraction of the base radius (0..1). */
+    UPROPERTY(EditAnywhere, Category = "Thumbstick", meta = (ClampMin = "0.1", ClampMax = "0.8"))
+    float KnobRadiusFraction = 0.375f;
 
-    /** Radius of the inner knob circle in pixels. */
-    UPROPERTY(EditAnywhere, Category = "Thumbstick")
-    float KnobRadius = 30.f;
+    /** Current base radius, derived from widget geometry. */
+    mutable float BaseRadius = 80.f;
 
     /** Dead zone as a fraction of BaseRadius (0..1). Below this, input is zero. */
     UPROPERTY(EditAnywhere, Category = "Thumbstick", meta = (ClampMin = "0", ClampMax = "0.5"))
